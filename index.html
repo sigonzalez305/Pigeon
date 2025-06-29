@@ -1,0 +1,32 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Pigeon Messenger</title>
+    <link rel="stylesheet" href="style.css">
+</head>
+<body>
+    <div class="app">
+        <h1>Pigeon Messenger</h1>
+        <div id="chat" class="chat"></div>
+        <form id="messageForm" class="form">
+            <div class="row">
+                <label>From: <input type="text" id="from" required></label>
+                <label>To: <input type="text" id="to" required></label>
+                <label>Purpose:
+                    <select id="purpose">
+                        <option value="General">General</option>
+                        <option value="Love">Love</option>
+                        <option value="Encouragement">Encouragement</option>
+                        <option value="Question">Question</option>
+                    </select>
+                </label>
+            </div>
+            <textarea id="message" rows="3" placeholder="Type your message" required></textarea>
+            <button type="submit">Send a Pigeon</button>
+        </form>
+    </div>
+    <script src="app.js"></script>
+</body>
+</html>
