@@ -15,11 +15,12 @@ const DEFAULT_STATE = {
   messages: [],
   lastMessageDate: null,
   weather: {
-    areaCode: '',
-    summary: 'Waiting for forecast…',
-    impact: 'Tailwind boosts speed.',
-    modifier: 0.9,
+    from: { areaCode: '', summary: 'Waiting for forecast…' },
+    to: { areaCode: '', summary: 'Waiting for forecast…' },
+    impact: 'Check both area codes to see the impact.',
+    modifier: 1,
   },
+  etaMinutes: 0,
 };
 
 // We save the game in localStorage so progress sticks between refreshes.
@@ -40,13 +41,22 @@ const pigeonAccessoryLabel = document.getElementById('pigeonAccessoryLabel');
 const pigeonBody = document.getElementById('pigeonBody');
 const pigeonAccessory = document.getElementById('pigeonAccessory');
 const dailyStatusEl = document.getElementById('dailyStatus');
-const areaCodeInput = document.getElementById('areaCode');
 const checkWeatherBtn = document.getElementById('checkWeather');
 const form = document.getElementById('messageForm');
-const fromInput = document.getElementById('from');
-const toInput = document.getElementById('to');
 const purposeSelect = document.getElementById('purpose');
 const messageInput = document.getElementById('message');
+const chatWindow = document.getElementById('chatWindow');
+const historyListEl = document.getElementById('historyList');
+const etaTextEl = document.getElementById('etaText');
+const flightIcon = document.getElementById('flightIcon');
+const tabButtons = document.querySelectorAll('[data-screen-button]');
+const screens = document.querySelectorAll('[data-screen]');
+
+// Phone fields
+const fromAreaCodeSelect = document.getElementById('fromAreaCode');
+const toAreaCodeSelect = document.getElementById('toAreaCode');
+const fromNumberInput = document.getElementById('fromNumber');
+const toNumberInput = document.getElementById('toNumber');
 
 // --- Constants for leveling and badges ---
 const BADGE_RULES = [
@@ -63,12 +73,35 @@ const WEATHER_IMPACT = {
   Storm: 1.4,
 };
 
+const AREA_CODE_OPTIONS = [
+  { code: '212', label: '212 — New York, NY' },
+  { code: '305', label: '305 — Miami, FL' },
+  { code: '310', label: '310 — Los Angeles, CA' },
+  { code: '312', label: '312 — Chicago, IL' },
+  { code: '415', label: '415 — San Francisco, CA' },
+  { code: '480', label: '480 — Phoenix East Valley, AZ' },
+  { code: '617', label: '617 — Boston, MA' },
+  { code: '702', label: '702 — Las Vegas, NV' },
+  { code: '737', label: '737 — Austin, TX' },
+  { code: '808', label: '808 — Hawaii' },
+];
+
 // --- Local storage helpers ---
 function loadState() {
   const cached = localStorage.getItem('pigeon-msg-state');
   if (!cached) return structuredClone(DEFAULT_STATE);
   try {
-    return { ...structuredClone(DEFAULT_STATE), ...JSON.parse(cached) };
+    const parsed = JSON.parse(cached);
+    return {
+      ...structuredClone(DEFAULT_STATE),
+      ...parsed,
+      weather: {
+        ...structuredClone(DEFAULT_STATE.weather),
+        ...parsed.weather,
+        from: { ...structuredClone(DEFAULT_STATE.weather.from), ...(parsed.weather?.from || {}) },
+        to: { ...structuredClone(DEFAULT_STATE.weather.to), ...(parsed.weather?.to || {}) },
+      },
+    };
   } catch (err) {
     return structuredClone(DEFAULT_STATE);
   }
@@ -133,16 +166,81 @@ function renderTimeline() {
   sorted.forEach((msg) => {
     const item = document.createElement('div');
     item.className = 'timeline-item';
-    const etaCopy = msg.status === 'delivered' ? 'Delivered' : `In flight: ETA ${msg.eta}s`;
+    const etaCopy = msg.status === 'delivered' ? 'Delivered' : `In flight: ETA ${msg.etaMinutes}m`;
     item.innerHTML = `<strong>${msg.from} → ${msg.to}</strong><br>${msg.text}<br><em>${etaCopy} | ${msg.weatherImpact}</em>`;
     timelineEl.appendChild(item);
   });
 }
 
 function renderWeather() {
-  weatherSummaryEl.textContent = state.weather.summary;
+  weatherSummaryEl.textContent = `${state.weather.from.summary} | ${state.weather.to.summary}`;
   weatherImpactEl.textContent = state.weather.impact;
-  areaCodeInput.value = state.weather.areaCode;
+  etaTextEl.textContent = state.etaMinutes
+    ? `Estimated delivery: ${state.etaMinutes} minutes.`
+    : 'ETA will appear after weather check (1–5 minutes).';
+
+  fromAreaCodeSelect.value = state.weather.from.areaCode;
+  toAreaCodeSelect.value = state.weather.to.areaCode;
+  toggleWeatherButton();
+}
+
+function renderChat() {
+  chatWindow.innerHTML = '';
+  const sorted = [...state.messages].sort((a, b) => a.sentAt - b.sentAt);
+  if (!sorted.length) {
+    const empty = document.createElement('div');
+    empty.className = 'chat-bubble';
+    empty.textContent = 'No chats yet. Customize your pigeon then send a daily note!';
+    chatWindow.appendChild(empty);
+    return;
+  }
+
+  sorted.forEach((msg) => {
+    const bubble = document.createElement('div');
+    bubble.className = 'chat-bubble';
+    const etaCopy = msg.status === 'delivered' ? 'Delivered' : `ETA ${msg.etaMinutes}m`;
+    bubble.innerHTML = `
+      <div class="route">${msg.from} → ${msg.to}</div>
+      <div>${msg.text}</div>
+      <div class="meta"><span>${msg.purpose}</span><span>${etaCopy}</span></div>
+    `;
+    chatWindow.appendChild(bubble);
+  });
+}
+
+function renderHistory() {
+  historyListEl.innerHTML = '';
+  const sorted = [...state.messages].sort((a, b) => b.sentAt - a.sentAt);
+  if (!sorted.length) {
+    const empty = document.createElement('div');
+    empty.className = 'history-card';
+    empty.textContent = 'No history yet. Your coop will remember each flight here.';
+    historyListEl.appendChild(empty);
+    return;
+  }
+
+  sorted.forEach((msg) => {
+    const card = document.createElement('div');
+    card.className = 'history-card';
+    const date = new Date(msg.sentAt).toLocaleString();
+    const etaCopy = msg.status === 'delivered' ? 'Delivered' : `In flight (${msg.etaMinutes}m)`;
+    card.innerHTML = `
+      <p class="route">${msg.from} → ${msg.to}</p>
+      <p>${msg.text}</p>
+      <div class="meta"><span>${msg.purpose}</span><span>${etaCopy}</span></div>
+      <div class="meta"><span>${date}</span><span>${msg.weatherImpact}</span></div>
+    `;
+    historyListEl.appendChild(card);
+  });
+}
+
+function renderEverything() {
+  renderStats();
+  renderBadges();
+  renderTimeline();
+  renderWeather();
+  renderChat();
+  renderHistory();
 }
 
 // --- Badge and leveling helpers ---
@@ -184,6 +282,11 @@ function alreadySentToday() {
   return state.lastMessageDate === today;
 }
 
+function formatPhone(areaCode, number) {
+  if (!areaCode && !number) return '';
+  return `(${areaCode}) ${number || '•••'}`;
+}
+
 function handleSend(event) {
   event.preventDefault();
   if (alreadySentToday()) {
@@ -191,29 +294,28 @@ function handleSend(event) {
     return;
   }
 
-  // Collect form values in a friendly way.
   const msg = {
     id: crypto.randomUUID(),
-    from: fromInput.value.trim(),
-    to: toInput.value.trim(),
+    from: formatPhone(fromAreaCodeSelect.value, fromNumberInput.value.trim()),
+    to: formatPhone(toAreaCodeSelect.value, toNumberInput.value.trim()),
+    fromAreaCode: fromAreaCodeSelect.value,
+    toAreaCode: toAreaCodeSelect.value,
     text: messageInput.value.trim(),
     purpose: purposeSelect.value,
     status: 'in-flight',
     sentAt: Date.now(),
-    eta: calculateEtaSeconds(),
-    weatherImpact: state.weather.summary,
+    etaMinutes: state.etaMinutes || calculateEtaMinutes(),
+    weatherImpact: state.weather.impact,
   };
 
-  if (!msg.from || !msg.to || !msg.text) {
+  if (!msg.fromAreaCode || !msg.toAreaCode || !msg.text) {
     dailyStatusEl.textContent = 'Please fill out every field so your pigeon knows where to go!';
     return;
   }
 
-  // Update the daily limiter right away so players see the rule applied.
   state.lastMessageDate = new Date().toDateString();
   dailyStatusEl.textContent = 'Pigeon launched! Tracking delivery time…';
 
-  // Add to state and paint UI.
   state.messages.push(msg);
   const flightDistance = 5 + Math.random() * 10;
   state.mileage += flightDistance;
@@ -221,67 +323,83 @@ function handleSend(event) {
   checkBadges();
   saveState();
   renderEverything();
+  triggerFlightAnimation();
 
-  // Simulate delivery after ETA. This is just a timeout; in production we would pair with a backend.
   setTimeout(() => {
     msg.status = 'delivered';
-    msg.eta = 0;
+    msg.etaMinutes = 0;
     checkBadges();
     saveState();
     renderEverything();
-  }, msg.eta * 1000);
+  }, msg.etaMinutes * 60 * 1000);
 
   form.reset();
+  state.etaMinutes = 0;
+  etaTextEl.textContent = 'ETA will appear after weather check (1–5 minutes).';
+  toggleWeatherButton();
 }
 
-function calculateEtaSeconds() {
-  // Start with a base ETA so every flight feels weighty.
-  const base = 18;
-  // Apply the weather modifier from the last fetched forecast.
-  return Math.round(base * (state.weather.modifier || 1));
+function calculateEtaMinutes(modifier = state.weather.modifier || 1) {
+  const baseMinutes = 1 + Math.random() * 4; // 1–5 minutes
+  const adjusted = Math.min(5, Math.max(1, Math.round(baseMinutes * modifier)));
+  state.etaMinutes = adjusted;
+  return adjusted;
 }
 
 // --- Weather lookup ---
 const OPEN_WEATHER_KEY = 'YOUR_OPENWEATHERMAP_KEY';
 
 async function handleWeatherCheck() {
-  const areaCode = areaCodeInput.value.trim();
-  if (!areaCode) {
-    weatherImpactEl.textContent = 'Add an area code to check the route.';
+  const fromArea = fromAreaCodeSelect.value;
+  const toArea = toAreaCodeSelect.value;
+  if (!fromArea || !toArea) {
+    weatherImpactEl.textContent = 'Add both area codes to check the route.';
     return;
   }
 
-  state.weather.areaCode = areaCode;
-  weatherSummaryEl.textContent = 'Checking skies…';
+  weatherImpactEl.textContent = 'Checking skies…';
+  state.weather.from.areaCode = fromArea;
+  state.weather.to.areaCode = toArea;
+
+  const [fromForecast, toForecast] = await Promise.all([
+    fetchWeatherSummary(fromArea),
+    fetchWeatherSummary(toArea),
+  ]);
+
+  const fromImpact = pickImpactLabel(fromForecast);
+  const toImpact = pickImpactLabel(toForecast);
+  const modifier = (WEATHER_IMPACT[fromImpact] + WEATHER_IMPACT[toImpact]) / 2;
+
+  state.weather.from.summary = `${fromImpact} at sender`;
+  state.weather.to.summary = `${toImpact} at recipient`;
+  state.weather.impact = `${fromImpact} → ${toImpact} conditions influence the ETA.`;
+  state.weather.modifier = modifier;
+  state.etaMinutes = calculateEtaMinutes(modifier);
+
+  saveState();
+  renderWeather();
+}
+
+async function fetchWeatherSummary(areaCode) {
   try {
-    // Fetching public weather data; this call needs a valid API key.
     const url = `https://api.openweathermap.org/data/2.5/weather?zip=${areaCode},US&units=metric&appid=${OPEN_WEATHER_KEY}`;
     const res = await fetch(url);
     if (!res.ok) throw new Error('Bad response');
     const data = await res.json();
-    const description = data.weather?.[0]?.main || 'Clear';
-    const impactLabel = pickImpactLabel(description);
-    updateWeatherState(description, impactLabel);
+    return data.weather?.[0]?.main || 'Clear';
   } catch (err) {
     // If the API key is missing, we still provide a friendly default so the UI does not break.
-    updateWeatherState('Clear', 'Tailwind');
+    const fallback = ['Tailwind', 'Clear', 'Drizzle', 'Storm'];
+    return fallback[Math.floor(Math.random() * fallback.length)];
   }
-
-  saveState();
-  renderWeather();
 }
 
 function pickImpactLabel(description) {
   if (/thunder|storm/i.test(description)) return 'Storm';
   if (/rain|drizzle/i.test(description)) return 'Drizzle';
   if (/cloud/i.test(description)) return 'Clear';
+  if (/wind/i.test(description)) return 'Tailwind';
   return 'Tailwind';
-}
-
-function updateWeatherState(summary, impactLabel) {
-  state.weather.summary = summary;
-  state.weather.impact = `${impactLabel} conditions influence the ETA.`;
-  state.weather.modifier = WEATHER_IMPACT[impactLabel] || 1;
 }
 
 // --- Input handlers for customization ---
@@ -296,29 +414,67 @@ function handleColorChange(event) {
   renderStats();
 }
 
-// --- Render everything in one go ---
-function renderEverything() {
-  renderStats();
-  renderBadges();
-  renderTimeline();
-  renderWeather();
+function toggleWeatherButton() {
+  const hasCodes = Boolean(toAreaCodeSelect.value);
+  checkWeatherBtn.classList.toggle('hidden', !hasCodes);
+}
+
+function switchScreen(target) {
+  screens.forEach((section) => {
+    const isMatch = section.dataset.screen === target;
+    section.toggleAttribute('hidden', !isMatch && section.hasAttribute('data-screen'));
+  });
+  tabButtons.forEach((btn) => btn.classList.toggle('is-active', btn.dataset.screenButton === target));
+}
+
+function triggerFlightAnimation() {
+  if (!flightIcon) return;
+  const startX = `${Math.random() * 40}px`;
+  const startY = `${Math.random() * 80}px`;
+  const endX = `${200 + Math.random() * 120}px`;
+  const endY = `${-40 - Math.random() * 60}px`;
+  flightIcon.style.setProperty('--start-x', startX);
+  flightIcon.style.setProperty('--start-y', startY);
+  flightIcon.style.setProperty('--end-x', endX);
+  flightIcon.style.setProperty('--end-y', endY);
+
+  flightIcon.classList.remove('is-flying');
+  void flightIcon.offsetWidth; // restart animation
+  flightIcon.classList.add('is-flying');
+}
+
+function populateAreaCodes() {
+  [fromAreaCodeSelect, toAreaCodeSelect].forEach((select) => {
+    select.innerHTML = '<option value="">Choose area code</option>';
+    AREA_CODE_OPTIONS.forEach((option) => {
+      const opt = document.createElement('option');
+      opt.value = option.code;
+      opt.textContent = option.label;
+      select.appendChild(opt);
+    });
+  });
 }
 
 // --- Startup ---
 function init() {
-  // Preload UI with saved state.
+  populateAreaCodes();
   renderEverything();
 
-  // Wire up listeners so every input updates the game.
   form.addEventListener('submit', handleSend);
   checkWeatherBtn.addEventListener('click', handleWeatherCheck);
   pigeonNameInput.addEventListener('input', handleNameChange);
   pigeonColorInput.addEventListener('change', handleColorChange);
+  toAreaCodeSelect.addEventListener('change', toggleWeatherButton);
 
-  // Show whether the player already sent today.
+  tabButtons.forEach((btn) => {
+    btn.addEventListener('click', () => switchScreen(btn.dataset.screenButton));
+  });
+
   if (alreadySentToday()) {
     dailyStatusEl.textContent = 'You already sent today. Check back tomorrow!';
   }
+
+  switchScreen('coop');
 }
 
 init();
