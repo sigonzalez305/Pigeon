@@ -1,32 +1,141 @@
 <!DOCTYPE html>
 <html lang="en">
 <head>
-    <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Pigeon Messenger</title>
-    <link rel="stylesheet" href="style.css">
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Pigeon MSG</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Press+Start+2P&display=swap" rel="stylesheet">
+  <link rel="stylesheet" href="style.css" />
 </head>
 <body>
-    <div class="app">
-        <h1>Pigeon Messenger</h1>
-        <div id="chat" class="chat"></div>
-        <form id="messageForm" class="form">
-            <div class="row">
-                <label>From: <input type="text" id="from" required></label>
-                <label>To: <input type="text" id="to" required></label>
-                <label>Purpose:
-                    <select id="purpose">
-                        <option value="General">General</option>
-                        <option value="Love">Love</option>
-                        <option value="Encouragement">Encouragement</option>
-                        <option value="Question">Question</option>
-                    </select>
-                </label>
-            </div>
-            <textarea id="message" rows="3" placeholder="Type your message" required></textarea>
-            <button type="submit">Send a Pigeon</button>
-        </form>
-    </div>
-    <script src="app.js"></script>
+  <main class="app-shell">
+    <header class="app-header">
+      <div class="logo-block">
+        <div class="pigeon-icon" aria-hidden="true">🕊️</div>
+        <div>
+          <p class="eyebrow">PIGEON MSG</p>
+          <h1 class="headline">One meaningful message a day.</h1>
+          <p class="subhead">Send your note, watch the pixel pigeon fly, and see how weather shapes its journey.</p>
+        </div>
+      </div>
+      <div class="level-card">
+        <p class="label">Pigeon Level</p>
+        <p id="pigeonLevel" class="metric">1</p>
+        <p class="label">XP</p>
+        <div class="meter" aria-label="Experience">
+          <div id="xpBar" class="meter-fill" style="width: 5%"></div>
+        </div>
+        <p id="xpText" class="tiny">0 / 20 XP</p>
+      </div>
+    </header>
+
+    <section class="coop" aria-labelledby="coop-title">
+      <div>
+        <p id="coopTitle" class="section-title">Pigeon Coop</p>
+        <p class="section-copy">Name your pigeon, pick its vibe, and preview its current gear.</p>
+        <div class="coop-controls">
+          <label class="input-block">Pigeon Name
+            <input id="pigeonName" type="text" maxlength="20" placeholder="Sky Courier" />
+          </label>
+          <label class="input-block">Signature Color
+            <select id="pigeonColor">
+              <option value="silver">Silver</option>
+              <option value="gold">Gold</option>
+              <option value="indigo">Indigo</option>
+              <option value="rose">Rose</option>
+            </select>
+          </label>
+        </div>
+      </div>
+      <div class="pigeon-preview" aria-label="Current pigeon preview">
+        <div class="pigeon-body" id="pigeonBody">
+          <div class="pigeon-wing"></div>
+          <div class="pigeon-eye"></div>
+          <div class="pigeon-pack" id="pigeonPack">🎒</div>
+          <div class="pigeon-accessory" id="pigeonAccessory">🎩</div>
+        </div>
+        <p class="badge-tag" id="pigeonAccessoryLabel">Starter Satchel</p>
+      </div>
+    </section>
+
+    <section class="panel" aria-labelledby="weather-title">
+      <div class="panel-header">
+        <p id="weather-title" class="section-title">Weather Routing</p>
+        <p class="section-copy">Weather changes delivery speed. Use an area code to check the skies.</p>
+      </div>
+      <div class="weather-grid">
+        <label class="input-block">Area Code (ZIP)
+          <input id="areaCode" type="text" inputmode="numeric" maxlength="10" placeholder="33101" />
+        </label>
+        <button id="checkWeather" class="button button-secondary" type="button">Check Weather</button>
+        <div class="weather-card">
+          <p class="label">Current Sky</p>
+          <p id="weatherSummary" class="metric">Waiting for forecast…</p>
+          <p class="label">Impact on ETA</p>
+          <p id="weatherImpact" class="tiny">Tailwind boosts speed.</p>
+        </div>
+      </div>
+    </section>
+
+    <section class="panel" aria-labelledby="message-title">
+      <div class="panel-header">
+        <p id="message-title" class="section-title">Send Today’s Message</p>
+        <p class="section-copy">You get one meaningful message per day. Make it count.</p>
+      </div>
+      <form id="messageForm" class="form-grid">
+        <label class="input-block">From
+          <input id="from" type="text" required placeholder="You" />
+        </label>
+        <label class="input-block">To
+          <input id="to" type="text" required placeholder="Friend" />
+        </label>
+        <label class="input-block">Purpose
+          <select id="purpose">
+            <option value="Encouragement">Encouragement</option>
+            <option value="Love">Love</option>
+            <option value="Update">Update</option>
+            <option value="Thank You">Thank You</option>
+          </select>
+        </label>
+        <label class="input-block full">Message
+          <textarea id="message" rows="4" maxlength="220" required placeholder="Share one thoughtful note for today."></textarea>
+        </label>
+        <div class="form-actions full">
+          <p id="dailyStatus" class="tiny">Ready to fly.</p>
+          <button type="submit" class="button">Launch Pigeon</button>
+        </div>
+      </form>
+    </section>
+
+    <section class="panel" aria-labelledby="journey-title">
+      <div class="panel-header">
+        <p id="journey-title" class="section-title">Journey Log</p>
+        <p class="section-copy">Watch the pigeon travel, earn badges, and track miles.</p>
+      </div>
+      <div class="journey-grid">
+        <div class="stat-card">
+          <p class="label">Miles Flown</p>
+          <p id="milesFlown" class="metric">0</p>
+          <p class="tiny">Longer trips unlock badges.</p>
+        </div>
+        <div class="stat-card">
+          <p class="label">Badges</p>
+          <div id="badgeList" class="badge-row" aria-live="polite"></div>
+        </div>
+        <div class="stat-card">
+          <p class="label">Flight Status</p>
+          <div id="flightTimeline" class="timeline" aria-live="polite"></div>
+        </div>
+      </div>
+    </section>
+  </main>
+
+  <footer class="footer">
+    <p>Built for cozy daily check-ins. Pixel art, weather-aware routes, and a lot of heart.</p>
+  </footer>
+
+  <script src="app.js"></script>
 </body>
 </html>
