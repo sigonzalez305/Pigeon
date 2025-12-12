@@ -16,8 +16,8 @@
         <div class="pigeon-icon" aria-hidden="true">🕊️</div>
         <div>
           <p class="eyebrow">PIGEON MSG</p>
-          <h1 class="headline">One meaningful message a day.</h1>
-          <p class="subhead">Send your note, watch the pixel pigeon fly, and see how weather shapes its journey.</p>
+          <h1 class="headline">Cozy pigeon care, Tamagotchi style.</h1>
+          <p class="subhead">Start in the coop, style your bird, then hop into the chatty message flow.</p>
         </div>
       </div>
       <div class="level-card">
@@ -31,7 +31,13 @@
       </div>
     </header>
 
-    <section class="coop" aria-labelledby="coop-title">
+    <nav class="tab-nav" aria-label="Primary">
+      <button class="tab-button is-active" data-screen-button="coop">Pigeon Coop</button>
+      <button class="tab-button" data-screen-button="message">Message</button>
+      <button class="tab-button" data-screen-button="history">History</button>
+    </nav>
+
+    <section class="coop" aria-labelledby="coop-title" data-screen="coop">
       <div>
         <p id="coopTitle" class="section-title">Pigeon Coop</p>
         <p class="section-copy">Name your pigeon, pick its vibe, and preview its current gear.</p>
@@ -48,6 +54,7 @@
             </select>
           </label>
         </div>
+        <button class="button coop-cta" type="button" data-screen-button="message">Go to Messaging</button>
       </div>
       <div class="pigeon-preview" aria-label="Current pigeon preview">
         <div class="pigeon-body" id="pigeonBody">
@@ -60,75 +67,93 @@
       </div>
     </section>
 
-    <section class="panel" aria-labelledby="weather-title">
+    <section class="panel message-panel" aria-labelledby="message-title" data-screen="message" hidden>
       <div class="panel-header">
-        <p id="weather-title" class="section-title">Weather Routing</p>
-        <p class="section-copy">Weather changes delivery speed. Use an area code to check the skies.</p>
+        <p id="message-title" class="section-title">Message of the Day</p>
+        <p class="section-copy">A WhatsApp-style chat view to share one thoughtful note. Check the skies, then launch.</p>
       </div>
-      <div class="weather-grid">
-        <label class="input-block">Area Code (ZIP)
-          <input id="areaCode" type="text" inputmode="numeric" maxlength="10" placeholder="33101" />
-        </label>
-        <button id="checkWeather" class="button button-secondary" type="button">Check Weather</button>
-        <div class="weather-card">
-          <p class="label">Current Sky</p>
-          <p id="weatherSummary" class="metric">Waiting for forecast…</p>
-          <p class="label">Impact on ETA</p>
-          <p id="weatherImpact" class="tiny">Tailwind boosts speed.</p>
+      <div class="message-layout">
+        <div class="chat-window" id="chatWindow" aria-live="polite"></div>
+        <form id="messageForm" class="form-grid chat-composer">
+          <div class="dual-input">
+            <label class="input-block">From Area Code
+              <select id="fromAreaCode"></select>
+            </label>
+            <label class="input-block">From Number
+              <input id="fromNumber" type="tel" inputmode="tel" maxlength="12" placeholder="555-1234" />
+            </label>
+          </div>
+          <div class="dual-input">
+            <label class="input-block">To Area Code
+              <select id="toAreaCode"></select>
+            </label>
+            <label class="input-block">To Number
+              <input id="toNumber" type="tel" inputmode="tel" maxlength="12" placeholder="555-6789" />
+            </label>
+          </div>
+          <label class="input-block">Purpose
+            <select id="purpose">
+              <option value="Encouragement">Encouragement</option>
+              <option value="Love">Love</option>
+              <option value="Update">Update</option>
+              <option value="Thank You">Thank You</option>
+            </select>
+          </label>
+          <label class="input-block full">Message
+            <textarea id="message" rows="4" maxlength="220" required placeholder="Share one thoughtful note for today."></textarea>
+          </label>
+          <div class="weather-inline full">
+            <div>
+              <p class="label">Weather</p>
+              <p id="weatherSummary" class="metric">Waiting for forecast…</p>
+              <p id="weatherImpact" class="tiny">Check both area codes to see the impact.</p>
+            </div>
+            <button id="checkWeather" class="button button-secondary hidden" type="button">Check Weather</button>
+          </div>
+          <div class="eta-row full">
+            <p id="etaText" class="tiny">ETA will appear after weather check (1–5 minutes).</p>
+            <p id="dailyStatus" class="tiny">Ready to fly.</p>
+          </div>
+          <div class="form-actions full">
+            <button type="submit" class="button">Launch Pigeon</button>
+          </div>
+        </form>
+      </div>
+    </section>
+
+    <section class="panel journey-panel" aria-labelledby="journey-title">
+      <div class="panel-header">
+        <p id="journey-title" class="section-title">Flight Map & Journey</p>
+        <p class="section-copy">An 8-bit map animates your pigeon’s path after each launch.</p>
+      </div>
+      <div class="map-wrapper">
+        <div class="pixel-map">
+          <div id="flightIcon" class="flight-icon" aria-hidden="true">🕊️</div>
+        </div>
+        <div class="journey-stats">
+          <div class="stat-card">
+            <p class="label">Miles Flown</p>
+            <p id="milesFlown" class="metric">0</p>
+            <p class="tiny">Longer trips unlock badges.</p>
+          </div>
+          <div class="stat-card">
+            <p class="label">Badges</p>
+            <div id="badgeList" class="badge-row" aria-live="polite"></div>
+          </div>
+          <div class="stat-card">
+            <p class="label">Flight Status</p>
+            <div id="flightTimeline" class="timeline" aria-live="polite"></div>
+          </div>
         </div>
       </div>
     </section>
 
-    <section class="panel" aria-labelledby="message-title">
+    <section class="panel" aria-labelledby="history-title" data-screen="history" hidden>
       <div class="panel-header">
-        <p id="message-title" class="section-title">Send Today’s Message</p>
-        <p class="section-copy">You get one meaningful message per day. Make it count.</p>
+        <p id="history-title" class="section-title">Message History</p>
+        <p class="section-copy">Local log of every message you’ve launched, saved in your browser.</p>
       </div>
-      <form id="messageForm" class="form-grid">
-        <label class="input-block">From
-          <input id="from" type="text" required placeholder="You" />
-        </label>
-        <label class="input-block">To
-          <input id="to" type="text" required placeholder="Friend" />
-        </label>
-        <label class="input-block">Purpose
-          <select id="purpose">
-            <option value="Encouragement">Encouragement</option>
-            <option value="Love">Love</option>
-            <option value="Update">Update</option>
-            <option value="Thank You">Thank You</option>
-          </select>
-        </label>
-        <label class="input-block full">Message
-          <textarea id="message" rows="4" maxlength="220" required placeholder="Share one thoughtful note for today."></textarea>
-        </label>
-        <div class="form-actions full">
-          <p id="dailyStatus" class="tiny">Ready to fly.</p>
-          <button type="submit" class="button">Launch Pigeon</button>
-        </div>
-      </form>
-    </section>
-
-    <section class="panel" aria-labelledby="journey-title">
-      <div class="panel-header">
-        <p id="journey-title" class="section-title">Journey Log</p>
-        <p class="section-copy">Watch the pigeon travel, earn badges, and track miles.</p>
-      </div>
-      <div class="journey-grid">
-        <div class="stat-card">
-          <p class="label">Miles Flown</p>
-          <p id="milesFlown" class="metric">0</p>
-          <p class="tiny">Longer trips unlock badges.</p>
-        </div>
-        <div class="stat-card">
-          <p class="label">Badges</p>
-          <div id="badgeList" class="badge-row" aria-live="polite"></div>
-        </div>
-        <div class="stat-card">
-          <p class="label">Flight Status</p>
-          <div id="flightTimeline" class="timeline" aria-live="polite"></div>
-        </div>
-      </div>
+      <div id="historyList" class="history-list" aria-live="polite"></div>
     </section>
   </main>
 
