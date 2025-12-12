@@ -1,0 +1,12 @@
+{
+  "name": "pigeon-messenger",
+  "version": "1.0.0",
+  "description": "Minimal web-based messenger with delayed delivery.",
+  "scripts": {
+    "start": "live-server .",
+    "test": "echo \"No tests specified\""
+  },
+  "devDependencies": {
+    "live-server": "^1.2.2"
+  }
+}
