@@ -11,146 +11,145 @@
   <!-- Main App Container -->
   <div id="app" class="app-container">
 
-    <!-- Header -->
-    <header class="app-header">
-      <h1 class="app-title">🐦 PIGEON</h1>
-      <p class="app-subtitle">Slow messages, delivered with care</p>
-    </header>
+    <!-- Pigeon Coop (Single Screen) -->
+    <div class="pigeon-coop">
 
-    <!-- Pigeon Display (Tamagotchi-style) -->
-    <section class="pigeon-display">
-      <div class="pigeon-screen">
-        <div class="pigeon-avatar" id="pigeonAvatar">
-          <div class="pigeon-sprite">🕊️</div>
+      <!-- Status Icons (Subtle, Top) -->
+      <div class="status-icons">
+        <div class="status-icon" title="Energy">
+          <span class="icon-symbol">⚡</span>
+          <span class="icon-value" id="iconEnergy">100</span>
         </div>
-        <div class="pigeon-info" id="pigeonInfo">
-          <div class="pigeon-name">Loading...</div>
-          <div class="pigeon-stats">
-            <div class="stat">
-              <span class="stat-label">Mood:</span>
-              <span class="stat-value" id="pigeonMood">neutral</span>
-            </div>
-            <div class="stat">
-              <span class="stat-label">Energy:</span>
-              <span class="stat-value" id="pigeonEnergy">100</span>
-            </div>
-            <div class="stat">
-              <span class="stat-label">Level:</span>
-              <span class="stat-value" id="pigeonLevel">1</span>
-            </div>
-            <div class="stat">
-              <span class="stat-label">XP:</span>
-              <span class="stat-value" id="pigeonXP">0</span>
-            </div>
+        <div class="status-icon" title="Mood">
+          <span class="icon-symbol">❤️</span>
+          <span class="icon-value" id="iconMood">neutral</span>
+        </div>
+        <div class="status-icon" title="Level">
+          <span class="icon-symbol">⭐</span>
+          <span class="icon-value" id="iconLevel">1</span>
+        </div>
+      </div>
+
+      <!-- Pigeon Name -->
+      <div class="pigeon-name" id="pigeonName">Courier</div>
+
+      <!-- Main Pigeon Display -->
+      <div class="pigeon-stage">
+        <!-- Pigeon Sprite (Dynamic) -->
+        <div class="pigeon-sprite" id="pigeonSprite" data-state="idle">
+          <div class="sprite-container">
+            <div class="sprite-bird">🕊️</div>
+            <div class="sprite-shadow"></div>
+          </div>
+        </div>
+
+        <!-- Message Scroll (Attached when written) -->
+        <div class="message-scroll hidden" id="messageScroll">
+          <div class="scroll-paper">
+            <div class="scroll-text" id="scrollText">Hello!</div>
           </div>
         </div>
       </div>
 
-      <!-- Status Bar -->
-      <div class="status-bar">
-        <div class="status-item">
-          <span class="status-label">Messages today:</span>
-          <span class="status-value" id="messagesUsed">0</span>
-          <span class="status-label">/</span>
-          <span class="status-value" id="messagesLimit">3</span>
-        </div>
-        <div class="status-item">
-          <span class="status-label">Last delivery:</span>
-          <span class="status-value" id="lastDelivery">Never</span>
-        </div>
+      <!-- Pigeon Status Message -->
+      <div class="pigeon-status-message" id="statusMessage">
+        Your pigeon is resting peacefully
       </div>
-    </section>
 
-    <!-- Action Buttons -->
-    <section class="action-buttons">
-      <button class="btn btn-primary" id="btnEditPigeon" data-action="edit-pigeon">
-        ✏️ Edit Pigeon
-      </button>
-      <button class="btn btn-primary" id="btnSendMessage" data-action="send-message">
-        📨 Send Message
-      </button>
-      <button class="btn btn-secondary" id="btnHistory" data-action="view-history">
-        📜 Message History
-      </button>
-      <button class="btn btn-secondary" id="btnWeather" data-action="check-weather">
-        🌤️ Check Weather
-      </button>
-      <button class="btn btn-tertiary" id="btnReset" data-action="reset-session">
-        🔄 Reset Daily Session
-      </button>
-    </section>
+      <!-- Action Bar (Feed | Write | Send | Rest) -->
+      <div class="action-bar">
+        <button class="action-btn" id="btnFeed" data-action="feed" title="Feed your pigeon">
+          <span class="action-icon">🌾</span>
+          <span class="action-label">Feed</span>
+        </button>
+        <button class="action-btn" id="btnWrite" data-action="write" title="Write a message">
+          <span class="action-icon">✍️</span>
+          <span class="action-label">Write</span>
+        </button>
+        <button class="action-btn" id="btnSend" data-action="send" title="Send message" disabled>
+          <span class="action-icon">🕊️</span>
+          <span class="action-label">Send</span>
+        </button>
+        <button class="action-btn" id="btnRest" data-action="rest" title="Let pigeon rest">
+          <span class="action-icon">💤</span>
+          <span class="action-label">Rest</span>
+        </button>
+      </div>
 
-    <!-- Edit Pigeon Panel (Hidden by default) -->
-    <section class="panel hidden" id="panelEditPigeon">
-      <div class="panel-header">
-        <h2>Edit Your Pigeon</h2>
-        <button class="btn-close" data-action="close-edit">✕</button>
+      <!-- Secondary Actions (Collapsed by default) -->
+      <div class="secondary-actions">
+        <button class="secondary-btn" data-action="view-history">📜 History</button>
+        <button class="secondary-btn" data-action="edit-pigeon">✏️ Edit</button>
+        <button class="secondary-btn" data-action="reset-session">🔄 Reset</button>
       </div>
-      <div class="panel-content">
-        <div class="form-group">
-          <label for="inputPigeonName">Name (max 20 characters):</label>
-          <input type="text" id="inputPigeonName" maxlength="20" placeholder="Courier">
-        </div>
-        <div class="form-group">
-          <label for="inputPigeonColor">Color:</label>
-          <input type="color" id="inputPigeonColor" value="#8B7355">
-        </div>
-        <button class="btn btn-primary" data-action="save-pigeon">💾 Save Changes</button>
-      </div>
-    </section>
 
-    <!-- Send Message Panel (Hidden by default) -->
-    <section class="panel hidden" id="panelSendMessage">
-      <div class="panel-header">
-        <h2>Send a Message</h2>
-        <button class="btn-close" data-action="close-send">✕</button>
-      </div>
-      <div class="panel-content">
-        <div class="form-group">
-          <label for="inputFromArea">From Area Code:</label>
-          <input type="text" id="inputFromArea" maxlength="3" pattern="[0-9]{3}" placeholder="212">
-        </div>
-        <div class="form-group">
-          <label for="inputToArea">To Area Code:</label>
-          <input type="text" id="inputToArea" maxlength="3" pattern="[0-9]{3}" placeholder="415">
-        </div>
-        <div class="form-group">
-          <label for="inputMessage">Message (max 500 characters):</label>
-          <textarea id="inputMessage" maxlength="500" rows="4" placeholder="Your message here..."></textarea>
-        </div>
-        <div class="message-preview" id="messagePreview">
-          <strong>Estimated Delivery:</strong>
-          <span id="estimatedDelivery">Calculate weather first</span>
-        </div>
-        <button class="btn btn-primary" data-action="send-now">🕊️ Send Now</button>
-      </div>
-    </section>
+    </div>
 
-    <!-- Message History Panel (Hidden by default) -->
-    <section class="panel hidden" id="panelHistory">
-      <div class="panel-header">
-        <h2>Message History</h2>
-        <button class="btn-close" data-action="close-history">✕</button>
-      </div>
-      <div class="panel-content">
-        <div id="historyList" class="history-list">
-          <p class="empty-state">No messages sent yet</p>
+    <!-- Writing Ritual Modal (Hidden by default) -->
+    <div class="ritual-overlay hidden" id="ritualOverlay">
+      <div class="ritual-scroll">
+        <div class="ritual-header">
+          <h2>📜 Write Your Message</h2>
+          <button class="ritual-close" data-action="close-ritual">✕</button>
+        </div>
+        <div class="ritual-form">
+          <div class="ritual-field">
+            <label>From Area Code:</label>
+            <input type="text" id="inputFromArea" maxlength="3" pattern="[0-9]{3}" placeholder="212">
+          </div>
+          <div class="ritual-field">
+            <label>To Area Code:</label>
+            <input type="text" id="inputToArea" maxlength="3" pattern="[0-9]{3}" placeholder="415">
+          </div>
+          <div class="ritual-field">
+            <label>Your Message (max 500 chars):</label>
+            <textarea id="inputMessage" maxlength="500" rows="6" placeholder="Type your message with care..."></textarea>
+            <div class="char-count">
+              <span id="charCount">0</span> / 500
+            </div>
+          </div>
+          <button class="ritual-attach-btn" data-action="attach-scroll">
+            📮 Attach to Pigeon
+          </button>
         </div>
       </div>
-    </section>
+    </div>
 
-    <!-- Weather Panel (Hidden by default) -->
-    <section class="panel hidden" id="panelWeather">
-      <div class="panel-header">
-        <h2>Weather Report</h2>
-        <button class="btn-close" data-action="close-weather">✕</button>
-      </div>
-      <div class="panel-content">
-        <div id="weatherDisplay" class="weather-display">
-          <p>Enter area codes in the Send Message form to check weather</p>
+    <!-- History Modal (Hidden by default) -->
+    <div class="modal-overlay hidden" id="modalHistory">
+      <div class="modal-content">
+        <div class="modal-header">
+          <h2>📜 Message History</h2>
+          <button class="modal-close" data-action="close-history">✕</button>
+        </div>
+        <div class="modal-body">
+          <div id="historyList" class="history-list">
+            <p class="empty-state">No messages sent yet</p>
+          </div>
         </div>
       </div>
-    </section>
+    </div>
+
+    <!-- Edit Modal (Hidden by default) -->
+    <div class="modal-overlay hidden" id="modalEdit">
+      <div class="modal-content">
+        <div class="modal-header">
+          <h2>✏️ Edit Your Pigeon</h2>
+          <button class="modal-close" data-action="close-edit">✕</button>
+        </div>
+        <div class="modal-body">
+          <div class="form-group">
+            <label for="inputPigeonName">Pigeon Name (max 20 chars):</label>
+            <input type="text" id="inputPigeonName" maxlength="20" placeholder="Courier">
+          </div>
+          <div class="form-group">
+            <label for="inputPigeonColor">Pigeon Color:</label>
+            <input type="color" id="inputPigeonColor" value="#8B7355">
+          </div>
+          <button class="btn btn-primary" data-action="save-pigeon">💾 Save Changes</button>
+        </div>
+      </div>
+    </div>
 
   </div>
 

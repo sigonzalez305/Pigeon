@@ -1,8 +1,6 @@
 /**
- * PIGEON - Main Application Controller
- *
- * Ties together state, UI, and interactions.
- * Guarantees click interactions, safe rendering, and no silent failures.
+ * PIGEON - Tamagotchi + Messaging Application
+ * Single-screen UI with care mechanics
  */
 
 import * as State from './pigeon-state.js';
@@ -12,12 +10,14 @@ import * as Weather from './pigeon-weather.js';
 // DOM Elements
 let elements = {};
 
+// Current scroll draft
+let currentDraft = null;
+
 // Current weather cache
 let currentWeather = null;
 
 /**
  * Safe number formatting
- * Never crashes on null/undefined
  */
 function safeNumber(value, decimals = 0) {
   try {
@@ -58,79 +58,443 @@ function safeText(value, fallback = '') {
 }
 
 /**
- * Render pigeon display
- * Safe - never crashes even with missing data
+ * Get pigeon state based on stats
  */
-function renderPigeonDisplay() {
+function getPigeonState(pigeon) {
+  if (pigeon.energy < 30) return 'tired';
+  if (pigeon.mood === 'happy') return 'happy';
+  return 'idle';
+}
+
+/**
+ * Get status message based on pigeon state
+ */
+function getStatusMessage(pigeon, hasScroll) {
+  if (hasScroll) {
+    return 'Your pigeon is carrying a message';
+  }
+
+  if (pigeon.energy < 20) {
+    return 'Your pigeon is exhausted and needs rest';
+  }
+
+  if (pigeon.energy < 50) {
+    return 'Your pigeon looks tired';
+  }
+
+  if (pigeon.mood === 'happy') {
+    return 'Your pigeon is happy and energetic!';
+  }
+
+  return 'Your pigeon is resting peacefully';
+}
+
+/**
+ * Update pigeon sprite state
+ */
+function updatePigeonSprite() {
   try {
     const state = State.getState();
     const pigeon = state?.pigeon || {};
+    const sprite = elements.pigeonSprite;
 
-    // Update name
-    const nameEl = elements.app.querySelector('.pigeon-name');
-    if (nameEl) {
-      nameEl.textContent = safeText(pigeon.name, 'Courier');
-    }
+    if (!sprite) return;
 
-    // Update avatar color
-    const avatarEl = elements.app.querySelector('.pigeon-avatar');
-    if (avatarEl && pigeon.color) {
-      avatarEl.style.backgroundColor = pigeon.color;
-    }
+    const pigeonState = getPigeonState(pigeon);
+    sprite.setAttribute('data-state', pigeonState);
 
-    // Update stats
-    if (elements.pigeonMood) {
-      elements.pigeonMood.textContent = safeText(pigeon.mood, 'neutral');
-    }
-
-    if (elements.pigeonEnergy) {
-      elements.pigeonEnergy.textContent = safeNumber(pigeon.energy, 0);
-    }
-
-    if (elements.pigeonLevel) {
-      elements.pigeonLevel.textContent = safeNumber(pigeon.level, 0);
-    }
-
-    if (elements.pigeonXP) {
-      elements.pigeonXP.textContent = safeNumber(pigeon.xp, 0);
-    }
-
-    Debug.logInfo('Pigeon display rendered');
+    Debug.logInfo(`Pigeon state: ${pigeonState}`);
   } catch (err) {
-    Debug.logError('Failed to render pigeon display', err);
+    Debug.logError('Failed to update pigeon sprite', err);
   }
 }
 
 /**
- * Render status bar
+ * Render status icons
  */
-function renderStatusBar() {
+function renderStatusIcons() {
   try {
     const state = State.getState();
-    const session = state?.session || {};
     const pigeon = state?.pigeon || {};
 
-    if (elements.messagesUsed) {
-      elements.messagesUsed.textContent = safeNumber(session.dailyMessagesUsed, 0);
+    if (elements.iconEnergy) {
+      elements.iconEnergy.textContent = safeNumber(pigeon.energy, 0);
     }
 
-    if (elements.messagesLimit) {
-      elements.messagesLimit.textContent = safeNumber(session.dailyLimit, 0);
+    if (elements.iconMood) {
+      elements.iconMood.textContent = safeText(pigeon.mood, 'neutral');
     }
 
-    if (elements.lastDelivery) {
-      elements.lastDelivery.textContent = safeDate(pigeon.lastMessageSentAt);
+    if (elements.iconLevel) {
+      elements.iconLevel.textContent = safeNumber(pigeon.level, 0);
     }
 
-    Debug.logInfo('Status bar rendered');
+    Debug.logInfo('Status icons rendered');
   } catch (err) {
-    Debug.logError('Failed to render status bar', err);
+    Debug.logError('Failed to render status icons', err);
+  }
+}
+
+/**
+ * Render pigeon name
+ */
+function renderPigeonName() {
+  try {
+    const state = State.getState();
+    const pigeon = state?.pigeon || {};
+
+    if (elements.pigeonName) {
+      elements.pigeonName.textContent = safeText(pigeon.name, 'Courier');
+    }
+
+    // Update avatar color
+    const avatar = document.querySelector('.pigeon-sprite');
+    if (avatar && pigeon.color) {
+      avatar.style.color = pigeon.color;
+    }
+
+    Debug.logInfo('Pigeon name rendered');
+  } catch (err) {
+    Debug.logError('Failed to render pigeon name', err);
+  }
+}
+
+/**
+ * Render status message
+ */
+function renderStatusMessage() {
+  try {
+    const state = State.getState();
+    const pigeon = state?.pigeon || {};
+    const hasScroll = !elements.messageScroll?.classList.contains('hidden');
+
+    if (elements.statusMessage) {
+      elements.statusMessage.textContent = getStatusMessage(pigeon, hasScroll);
+    }
+
+    Debug.logInfo('Status message rendered');
+  } catch (err) {
+    Debug.logError('Failed to render status message', err);
+  }
+}
+
+/**
+ * Update action button states
+ */
+function updateActionButtons() {
+  try {
+    const state = State.getState();
+    const pigeon = state?.pigeon || {};
+    const hasScroll = currentDraft !== null;
+
+    // Send button - enabled only when scroll is attached
+    if (elements.btnSend) {
+      elements.btnSend.disabled = !hasScroll;
+    }
+
+    // Write button - disabled if pigeon is too tired or already has scroll
+    if (elements.btnWrite) {
+      elements.btnWrite.disabled = pigeon.energy < 20 || hasScroll;
+    }
+
+    // Feed button - always enabled
+    // Rest button - always enabled
+
+    Debug.logInfo('Action buttons updated');
+  } catch (err) {
+    Debug.logError('Failed to update action buttons', err);
+  }
+}
+
+/**
+ * Render all UI components
+ */
+function renderAll() {
+  renderStatusIcons();
+  renderPigeonName();
+  renderStatusMessage();
+  updatePigeonSprite();
+  updateActionButtons();
+}
+
+/**
+ * Show modal
+ */
+function showModal(modalId) {
+  try {
+    const modal = elements[modalId];
+    if (modal) {
+      modal.classList.remove('hidden');
+      Debug.logInfo(`Showing modal: ${modalId}`);
+    }
+  } catch (err) {
+    Debug.logError(`Failed to show modal: ${modalId}`, err);
+  }
+}
+
+/**
+ * Hide modal
+ */
+function hideModal(modalId) {
+  try {
+    const modal = elements[modalId];
+    if (modal) {
+      modal.classList.add('hidden');
+      Debug.logInfo(`Hiding modal: ${modalId}`);
+    }
+  } catch (err) {
+    Debug.logError(`Failed to hide modal: ${modalId}`, err);
+  }
+}
+
+/**
+ * Handle Feed action
+ */
+function handleFeed() {
+  try {
+    const state = State.getState();
+    const pigeon = state.pigeon;
+
+    // Restore 20 energy (capped at 100)
+    const newEnergy = Math.min(100, pigeon.energy + 20);
+    State.updatePigeon({ energy: newEnergy });
+
+    // Refresh mood
+    State.refreshMood();
+
+    // Brief happy animation
+    elements.pigeonSprite?.setAttribute('data-state', 'happy');
+    setTimeout(() => {
+      updatePigeonSprite();
+    }, 1000);
+
+    renderAll();
+
+    Debug.logInfo('Fed pigeon', { newEnergy });
+  } catch (err) {
+    Debug.logError('Failed to feed pigeon', err);
+  }
+}
+
+/**
+ * Handle Rest action
+ */
+function handleRest() {
+  try {
+    // Restore 10 energy (capped at 100)
+    const state = State.getState();
+    const newEnergy = Math.min(100, state.pigeon.energy + 10);
+    State.updatePigeon({ energy: newEnergy });
+
+    // Refresh mood
+    State.refreshMood();
+
+    renderAll();
+
+    Debug.logInfo('Pigeon rested', { newEnergy });
+  } catch (err) {
+    Debug.logError('Failed to rest pigeon', err);
+  }
+}
+
+/**
+ * Handle Write action (open ritual modal)
+ */
+function handleWrite() {
+  try {
+    const state = State.getState();
+
+    // Check energy
+    if (state.pigeon.energy < 20) {
+      alert('Your pigeon is too tired to carry a message. Let them rest first!');
+      return;
+    }
+
+    // Check if already has scroll
+    if (currentDraft !== null) {
+      alert('Your pigeon is already carrying a message!');
+      return;
+    }
+
+    // Check daily limit
+    if (state.session.dailyMessagesUsed >= state.session.dailyLimit) {
+      alert('Daily message limit reached! Reset your session to send more.');
+      return;
+    }
+
+    // Clear form
+    if (elements.inputFromArea) elements.inputFromArea.value = '';
+    if (elements.inputToArea) elements.inputToArea.value = '';
+    if (elements.inputMessage) elements.inputMessage.value = '';
+    if (elements.charCount) elements.charCount.textContent = '0';
+
+    showModal('ritualOverlay');
+
+    Debug.logInfo('Write ritual opened');
+  } catch (err) {
+    Debug.logError('Failed to handle write', err);
+  }
+}
+
+/**
+ * Handle Attach Scroll (from ritual modal)
+ */
+async function handleAttachScroll() {
+  try {
+    const fromArea = elements.inputFromArea?.value;
+    const toArea = elements.inputToArea?.value;
+    const messageBody = elements.inputMessage?.value;
+
+    // Validation
+    if (!fromArea || !toArea || !messageBody) {
+      alert('Please fill in all fields');
+      return;
+    }
+
+    if (fromArea.length !== 3 || toArea.length !== 3) {
+      alert('Area codes must be exactly 3 digits');
+      return;
+    }
+
+    if (!/^\d{3}$/.test(fromArea) || !/^\d{3}$/.test(toArea)) {
+      alert('Area codes must contain only numbers');
+      return;
+    }
+
+    Debug.logInfo('Attaching scroll', { fromArea, toArea });
+
+    // Fetch weather
+    currentWeather = await Weather.getRouteWeather(fromArea, toArea);
+
+    // Create draft
+    currentDraft = {
+      fromAreaCode: fromArea,
+      toAreaCode: toArea,
+      body: messageBody,
+      weather: currentWeather,
+    };
+
+    // Show scroll on pigeon
+    if (elements.messageScroll) {
+      elements.messageScroll.classList.remove('hidden');
+    }
+
+    if (elements.scrollText) {
+      const preview = messageBody.length > 30
+        ? messageBody.substring(0, 30) + '...'
+        : messageBody;
+      elements.scrollText.textContent = preview;
+    }
+
+    // Close ritual modal
+    hideModal('ritualOverlay');
+
+    // Update UI
+    renderAll();
+
+    Debug.logInfo('Scroll attached', currentDraft);
+  } catch (err) {
+    Debug.logError('Failed to attach scroll', err);
+    alert('Failed to attach scroll. Check debug panel for details.');
+  }
+}
+
+/**
+ * Handle Send action (flight animation)
+ */
+function handleSend() {
+  try {
+    if (!currentDraft) {
+      alert('No message to send! Write a message first.');
+      return;
+    }
+
+    const state = State.getState();
+
+    // Calculate delivery time
+    const distance = Weather.calculateDistance(currentDraft.fromAreaCode, currentDraft.toAreaCode);
+    const weatherMultiplier = currentDraft.weather?.delayMultiplier || 1.0;
+    const delivery = Weather.calculateDelivery(distance, weatherMultiplier);
+    const scheduledDeliveryAt = Date.now() + (delivery.delayedMinutes * 60 * 1000);
+
+    // Add message to state
+    const message = State.addMessage({
+      fromAreaCode: currentDraft.fromAreaCode,
+      toAreaCode: currentDraft.toAreaCode,
+      body: currentDraft.body,
+      scheduledDeliveryAt,
+    });
+
+    // Consume energy
+    State.consumeEnergy(15);
+
+    // Add XP
+    State.addXP(10);
+
+    // Animate pigeon flying away
+    if (elements.pigeonSprite) {
+      elements.pigeonSprite.setAttribute('data-state', 'flying');
+    }
+
+    // Hide scroll
+    setTimeout(() => {
+      if (elements.messageScroll) {
+        elements.messageScroll.classList.add('hidden');
+      }
+    }, 500);
+
+    // After 2 seconds, set to "gone"
+    setTimeout(() => {
+      if (elements.pigeonSprite) {
+        elements.pigeonSprite.setAttribute('data-state', 'gone');
+      }
+      if (elements.statusMessage) {
+        elements.statusMessage.textContent = `Flying to area code ${currentDraft.toAreaCode}... ETA: ${delivery.delayedMinutes} min`;
+      }
+    }, 2000);
+
+    // Simulate return after delivery time
+    setTimeout(() => {
+      // Pigeon returns
+      if (elements.pigeonSprite) {
+        elements.pigeonSprite.setAttribute('data-state', 'returning');
+      }
+
+      setTimeout(() => {
+        updatePigeonSprite();
+        renderAll();
+        alert(`Message delivered! Your pigeon has returned.`);
+      }, 2000);
+    }, delivery.delayedMinutes * 60 * 1000);
+
+    // Clear draft
+    currentDraft = null;
+
+    // Update UI
+    renderAll();
+
+    Debug.logInfo('Message sent', message);
+  } catch (err) {
+    Debug.logError('Failed to send message', err);
+    alert('Failed to send message. Check debug panel for details.');
+  }
+}
+
+/**
+ * Handle View History
+ */
+function handleViewHistory() {
+  try {
+    renderMessageHistory();
+    showModal('modalHistory');
+    Debug.logInfo('History modal opened');
+  } catch (err) {
+    Debug.logError('Failed to handle view history', err);
   }
 }
 
 /**
  * Render message history
- * Safe - each item rendered independently to prevent cascade failures
  */
 function renderMessageHistory() {
   try {
@@ -178,98 +542,12 @@ function renderMessageHistory() {
         elements.historyList.appendChild(item);
       } catch (err) {
         Debug.logError(`Failed to render message ${index}`, err);
-        // Continue rendering other messages
       }
     });
 
     Debug.logInfo(`Rendered ${messages.length} messages`);
   } catch (err) {
     Debug.logError('Failed to render message history', err);
-  }
-}
-
-/**
- * Render weather display
- */
-function renderWeatherDisplay() {
-  try {
-    if (!elements.weatherDisplay) return;
-
-    if (!currentWeather) {
-      elements.weatherDisplay.innerHTML = '<p>Enter area codes in the Send Message form to check weather</p>';
-      return;
-    }
-
-    const { from, to, delayMultiplier, isLive } = currentWeather;
-
-    elements.weatherDisplay.innerHTML = `
-      <div class="weather-card">
-        <div class="weather-location">From: Area Code ${safeText(from?.location, 'Unknown')}</div>
-        <div class="weather-condition">${Weather.formatWeatherDescription(from)}</div>
-      </div>
-      <div class="weather-card">
-        <div class="weather-location">To: Area Code ${safeText(to?.location, 'Unknown')}</div>
-        <div class="weather-condition">${Weather.formatWeatherDescription(to)}</div>
-      </div>
-      <div class="weather-card">
-        <div class="weather-location">Flight Impact</div>
-        <div class="weather-condition">Delay Multiplier: ${safeNumber(delayMultiplier, 1)}x</div>
-        <div class="weather-condition">Source: ${isLive ? '🌐 Live Data' : '🎭 Mock Data'}</div>
-      </div>
-    `;
-
-    Debug.logInfo('Weather display rendered', currentWeather);
-  } catch (err) {
-    Debug.logError('Failed to render weather display', err);
-  }
-}
-
-/**
- * Render all UI components
- */
-function renderAll() {
-  renderPigeonDisplay();
-  renderStatusBar();
-  renderMessageHistory();
-  renderWeatherDisplay();
-}
-
-/**
- * Show panel (hide others)
- */
-function showPanel(panelId) {
-  try {
-    // Hide all panels
-    ['panelEditPigeon', 'panelSendMessage', 'panelHistory', 'panelWeather'].forEach(id => {
-      const panel = elements[id];
-      if (panel) {
-        panel.classList.add('hidden');
-      }
-    });
-
-    // Show requested panel
-    const panel = elements[panelId];
-    if (panel) {
-      panel.classList.remove('hidden');
-      Debug.logInfo(`Showing panel: ${panelId}`);
-    }
-  } catch (err) {
-    Debug.logError(`Failed to show panel: ${panelId}`, err);
-  }
-}
-
-/**
- * Hide panel
- */
-function hidePanel(panelId) {
-  try {
-    const panel = elements[panelId];
-    if (panel) {
-      panel.classList.add('hidden');
-      Debug.logInfo(`Hiding panel: ${panelId}`);
-    }
-  } catch (err) {
-    Debug.logError(`Failed to hide panel: ${panelId}`, err);
   }
 }
 
@@ -289,8 +567,8 @@ function handleEditPigeon() {
       elements.inputPigeonColor.value = pigeon.color;
     }
 
-    showPanel('panelEditPigeon');
-    Debug.logInfo('Edit pigeon panel opened');
+    showModal('modalEdit');
+    Debug.logInfo('Edit pigeon modal opened');
   } catch (err) {
     Debug.logError('Failed to handle edit pigeon', err);
   }
@@ -306,8 +584,8 @@ function handleSavePigeon() {
 
     State.updatePigeon({ name, color });
 
-    hidePanel('panelEditPigeon');
-    renderPigeonDisplay();
+    hideModal('modalEdit');
+    renderAll();
 
     Debug.logInfo('Pigeon saved', { name, color });
   } catch (err) {
@@ -316,143 +594,11 @@ function handleSavePigeon() {
 }
 
 /**
- * Handle Send Message
- */
-function handleSendMessage() {
-  try {
-    const state = State.getState();
-
-    // Check daily limit
-    if (state.session.dailyMessagesUsed >= state.session.dailyLimit) {
-      alert('Daily message limit reached! Reset your session to send more.');
-      Debug.logWarning('Daily limit reached');
-      return;
-    }
-
-    // Check energy
-    if (state.pigeon.energy < 20) {
-      alert('Your pigeon is too tired! Let them rest.');
-      Debug.logWarning('Pigeon energy too low');
-      return;
-    }
-
-    showPanel('panelSendMessage');
-    Debug.logInfo('Send message panel opened');
-  } catch (err) {
-    Debug.logError('Failed to handle send message', err);
-  }
-}
-
-/**
- * Handle Send Now
- */
-async function handleSendNow() {
-  try {
-    const fromArea = elements.inputFromArea?.value;
-    const toArea = elements.inputToArea?.value;
-    const messageBody = elements.inputMessage?.value;
-
-    // Validation
-    if (!fromArea || !toArea || !messageBody) {
-      alert('Please fill in all fields');
-      return;
-    }
-
-    if (fromArea.length !== 3 || toArea.length !== 3) {
-      alert('Area codes must be exactly 3 digits');
-      return;
-    }
-
-    Debug.logInfo('Sending message', { fromArea, toArea });
-
-    // Calculate delivery time
-    const distance = Weather.calculateDistance(fromArea, toArea);
-    const weatherMultiplier = currentWeather?.delayMultiplier || 1.0;
-    const delivery = Weather.calculateDelivery(distance, weatherMultiplier);
-
-    const scheduledDeliveryAt = Date.now() + (delivery.delayedMinutes * 60 * 1000);
-
-    // Add message
-    const message = State.addMessage({
-      fromAreaCode: fromArea,
-      toAreaCode: toArea,
-      body: messageBody,
-      scheduledDeliveryAt,
-    });
-
-    // Consume energy
-    State.consumeEnergy(15);
-
-    // Add XP
-    State.addXP(10);
-
-    // Clear form
-    if (elements.inputFromArea) elements.inputFromArea.value = '';
-    if (elements.inputToArea) elements.inputToArea.value = '';
-    if (elements.inputMessage) elements.inputMessage.value = '';
-
-    hidePanel('panelSendMessage');
-    renderAll();
-
-    alert(`Message sent! Estimated delivery: ${delivery.delayedMinutes} minutes`);
-    Debug.logInfo('Message sent successfully', message);
-  } catch (err) {
-    Debug.logError('Failed to send message', err);
-    alert('Failed to send message. Check debug panel for details.');
-  }
-}
-
-/**
- * Handle View History
- */
-function handleViewHistory() {
-  try {
-    renderMessageHistory();
-    showPanel('panelHistory');
-    Debug.logInfo('History panel opened');
-  } catch (err) {
-    Debug.logError('Failed to handle view history', err);
-  }
-}
-
-/**
- * Handle Check Weather
- */
-async function handleCheckWeather() {
-  try {
-    const fromArea = elements.inputFromArea?.value || '212';
-    const toArea = elements.inputToArea?.value || '415';
-
-    Debug.logInfo('Checking weather', { fromArea, toArea });
-
-    currentWeather = await Weather.getRouteWeather(fromArea, toArea);
-
-    // Update state
-    State.updateWeather({
-      fromLocation: fromArea,
-      toLocation: toArea,
-      condition: currentWeather.from.condition,
-      temperature: currentWeather.from.temperature,
-      delayMultiplier: currentWeather.delayMultiplier,
-      isLive: currentWeather.isLive,
-    });
-
-    renderWeatherDisplay();
-    showPanel('panelWeather');
-
-    Debug.logInfo('Weather checked successfully', currentWeather);
-  } catch (err) {
-    Debug.logError('Failed to check weather', err);
-    alert('Failed to check weather. Check debug panel for details.');
-  }
-}
-
-/**
- * Handle Reset Daily Session
+ * Handle Reset Session
  */
 function handleResetSession() {
   try {
-    const confirmed = confirm('Reset daily session? This will reset message count and edit mode.');
+    const confirmed = confirm('Reset daily session? This will reset message count.');
 
     if (confirmed) {
       State.resetDailySession();
@@ -466,8 +612,21 @@ function handleResetSession() {
 }
 
 /**
- * Set up all button click handlers
- * Uses event delegation for safety
+ * Update character count
+ */
+function updateCharCount() {
+  try {
+    const message = elements.inputMessage?.value || '';
+    if (elements.charCount) {
+      elements.charCount.textContent = message.length.toString();
+    }
+  } catch (err) {
+    Debug.logError('Failed to update char count', err);
+  }
+}
+
+/**
+ * Set up all event handlers
  */
 function setupEventHandlers() {
   // Event delegation on document
@@ -482,6 +641,30 @@ function setupEventHandlers() {
 
     try {
       switch (action) {
+        case 'feed':
+          handleFeed();
+          break;
+        case 'write':
+          handleWrite();
+          break;
+        case 'send':
+          handleSend();
+          break;
+        case 'rest':
+          handleRest();
+          break;
+        case 'attach-scroll':
+          handleAttachScroll();
+          break;
+        case 'close-ritual':
+          hideModal('ritualOverlay');
+          break;
+        case 'view-history':
+          handleViewHistory();
+          break;
+        case 'close-history':
+          hideModal('modalHistory');
+          break;
         case 'edit-pigeon':
           handleEditPigeon();
           break;
@@ -489,28 +672,7 @@ function setupEventHandlers() {
           handleSavePigeon();
           break;
         case 'close-edit':
-          hidePanel('panelEditPigeon');
-          break;
-        case 'send-message':
-          handleSendMessage();
-          break;
-        case 'send-now':
-          handleSendNow();
-          break;
-        case 'close-send':
-          hidePanel('panelSendMessage');
-          break;
-        case 'view-history':
-          handleViewHistory();
-          break;
-        case 'close-history':
-          hidePanel('panelHistory');
-          break;
-        case 'check-weather':
-          handleCheckWeather();
-          break;
-        case 'close-weather':
-          hidePanel('panelWeather');
+          hideModal('modalEdit');
           break;
         case 'reset-session':
           handleResetSession();
@@ -523,6 +685,11 @@ function setupEventHandlers() {
     }
   });
 
+  // Character count for textarea
+  if (elements.inputMessage) {
+    elements.inputMessage.addEventListener('input', updateCharCount);
+  }
+
   Debug.logLifecycle('Event handlers installed');
 }
 
@@ -532,24 +699,28 @@ function setupEventHandlers() {
 function cacheElements() {
   elements = {
     app: document.getElementById('app'),
-    pigeonMood: document.getElementById('pigeonMood'),
-    pigeonEnergy: document.getElementById('pigeonEnergy'),
-    pigeonLevel: document.getElementById('pigeonLevel'),
-    pigeonXP: document.getElementById('pigeonXP'),
-    messagesUsed: document.getElementById('messagesUsed'),
-    messagesLimit: document.getElementById('messagesLimit'),
-    lastDelivery: document.getElementById('lastDelivery'),
-    panelEditPigeon: document.getElementById('panelEditPigeon'),
-    panelSendMessage: document.getElementById('panelSendMessage'),
-    panelHistory: document.getElementById('panelHistory'),
-    panelWeather: document.getElementById('panelWeather'),
-    inputPigeonName: document.getElementById('inputPigeonName'),
-    inputPigeonColor: document.getElementById('inputPigeonColor'),
+    pigeonName: document.getElementById('pigeonName'),
+    pigeonSprite: document.getElementById('pigeonSprite'),
+    messageScroll: document.getElementById('messageScroll'),
+    scrollText: document.getElementById('scrollText'),
+    statusMessage: document.getElementById('statusMessage'),
+    iconEnergy: document.getElementById('iconEnergy'),
+    iconMood: document.getElementById('iconMood'),
+    iconLevel: document.getElementById('iconLevel'),
+    btnFeed: document.getElementById('btnFeed'),
+    btnWrite: document.getElementById('btnWrite'),
+    btnSend: document.getElementById('btnSend'),
+    btnRest: document.getElementById('btnRest'),
+    ritualOverlay: document.getElementById('ritualOverlay'),
     inputFromArea: document.getElementById('inputFromArea'),
     inputToArea: document.getElementById('inputToArea'),
     inputMessage: document.getElementById('inputMessage'),
+    charCount: document.getElementById('charCount'),
+    modalHistory: document.getElementById('modalHistory'),
     historyList: document.getElementById('historyList'),
-    weatherDisplay: document.getElementById('weatherDisplay'),
+    modalEdit: document.getElementById('modalEdit'),
+    inputPigeonName: document.getElementById('inputPigeonName'),
+    inputPigeonColor: document.getElementById('inputPigeonColor'),
   };
 
   Debug.logLifecycle('DOM elements cached');
