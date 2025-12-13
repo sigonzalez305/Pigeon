@@ -343,6 +343,20 @@ const deepClone = (value) => {
   return JSON.parse(JSON.stringify(value));
 };
 
+const safeToFixed = (value, digits = 2, fallback = '0.00') => {
+  const numeric = Number(value);
+  if (!Number.isFinite(numeric)) return fallback;
+  return numeric.toFixed(digits);
+};
+
+const renderGuard = (fn, label) => {
+  try {
+    fn();
+  } catch (error) {
+    console.error(`${label} failed`, error);
+  }
+};
+
 const DEFAULT_STATE = {
   pigeon: {
     name: 'Sky Courier',
@@ -448,7 +462,7 @@ function renderStats() {
   xpTextEl.textContent = `${state.pigeon.xp} / ${nextLevelTarget} XP`;
   const percent = Math.min(100, Math.round((state.pigeon.xp / nextLevelTarget) * 100));
   xpBarEl.style.width = `${percent}%`;
-  milesEl.textContent = state.mileage.toFixed(1);
+  milesEl.textContent = safeToFixed(state.mileage, 1, '0.0');
 
   const colorFilters = {
     silver: 'brightness(1)',
@@ -551,32 +565,40 @@ function renderHistory() {
     historyListEl.appendChild(empty);
     return;
   }
+  sorted.forEach((rawMessage = {}) => {
+    try {
+      const msg = rawMessage || {};
+      const date = msg.sentAt ? new Date(msg.sentAt).toLocaleString() : 'Unknown';
+      const etaMinutes = Number.isFinite(msg.etaMinutes) ? msg.etaMinutes : 0;
+      const etaCopy = msg.status === 'delivered' ? 'Delivered' : `In flight (${etaMinutes}m)`;
+      const arrival = msg.deliverAt ? new Date(msg.deliverAt).toLocaleTimeString() : 'Pending';
+      const weatherImpact = msg.weatherImpact || 'Weather impact not logged';
+      const milesText = safeToFixed(msg.miles, 1, '0.0');
 
-  sorted.forEach((msg) => {
-    const card = document.createElement('div');
-    card.className = 'history-card';
-    const date = new Date(msg.sentAt).toLocaleString();
-    const etaCopy = msg.status === 'delivered' ? 'Delivered' : `In flight (${msg.etaMinutes}m)`;
-    const arrival = msg.deliverAt ? new Date(msg.deliverAt).toLocaleTimeString() : 'Pending';
-    card.innerHTML = `
-      <p class="route">${msg.from} → ${msg.to}</p>
-      <p>${msg.text}</p>
-      <div class="meta"><span>${msg.purpose}</span><span>${etaCopy}</span></div>
-      <div class="meta"><span>Sent: ${date}</span><span>Arrives: ${arrival}</span></div>
-      <div class="meta"><span>${msg.weatherImpact}</span><span>Miles: ${msg.miles.toFixed(1)}</span></div>
-    `;
-    historyListEl.appendChild(card);
+      const card = document.createElement('div');
+      card.className = 'history-card';
+      card.innerHTML = `
+        <p class="route">${msg.from || 'Unknown'} → ${msg.to || 'Unknown'}</p>
+        <p>${msg.text || 'No message content provided.'}</p>
+        <div class="meta"><span>${msg.purpose || 'General'}</span><span>${etaCopy}</span></div>
+        <div class="meta"><span>Sent: ${date}</span><span>Arrives: ${arrival}</span></div>
+        <div class="meta"><span>${weatherImpact}</span><span>Miles: ${milesText}</span></div>
+      `;
+      historyListEl.appendChild(card);
+    } catch (historyError) {
+      console.error('renderHistory item failed', historyError, rawMessage);
+    }
   });
 }
 
 function renderEverything() {
-  renderStats();
-  renderBadges();
-  renderTimeline();
-  renderWeather();
-  renderChat();
-  renderHistory();
-  refreshMap();
+  renderGuard(renderStats, 'renderStats');
+  renderGuard(renderBadges, 'renderBadges');
+  renderGuard(renderTimeline, 'renderTimeline');
+  renderGuard(renderWeather, 'renderWeather');
+  renderGuard(renderChat, 'renderChat');
+  renderGuard(renderHistory, 'renderHistory');
+  renderGuard(refreshMap, 'refreshMap');
 }
 
 function checkBadges() {
