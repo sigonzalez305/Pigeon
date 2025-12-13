@@ -1,0 +1,185 @@
+<!DOCTYPE html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>PIGEON V2</title>
+    <link rel="preconnect" href="https://fonts.googleapis.com" />
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+    <link
+      href="https://fonts.googleapis.com/css2?family=Inter:wght@400;600;700&family=Press+Start+2P&display=swap"
+      rel="stylesheet"
+    />
+    <link rel="stylesheet" href="v2.css" />
+  </head>
+  <body>
+    <div class="page-shell">
+      <header>
+        <div class="header-row">
+          <div class="title-block">
+            <p class="chip chip-on" id="onlineChip">Online</p>
+            <h1>PIGEON V2</h1>
+            <p class="subtitle">Fresh rebuild to validate interaction</p>
+            <p class="subtitle"><a href="index.html">Back to V1 landing</a></p>
+          </div>
+          <div>
+            <div class="status-row">
+              <span class="chip chip-on" data-chip="mounted">Mounting…</span>
+              <span class="chip" data-chip="storage">Storage unknown</span>
+              <span class="chip chip-on">Runtime ready</span>
+            </div>
+            <p class="log-label" id="overlayIndicator">Overlay scan idle</p>
+          </div>
+        </div>
+      </header>
+
+      <main class="layout">
+        <section class="card">
+          <h2 class="section-title">Coop Console</h2>
+          <p class="section-subtitle">Identity, actions, and our Tamagotchi-style perch.</p>
+
+          <div class="card" style="margin-bottom: 10px">
+            <h3 class="section-title">Pigeon Identity</h3>
+            <p class="section-subtitle">Update the name and signature color, then save.</p>
+            <div class="input-grid">
+              <label>
+                <span class="label">Name</span>
+                <input id="pigeonNameInput" type="text" maxlength="24" placeholder="Sky Courier" />
+              </label>
+              <label>
+                <span class="label">Signature Color</span>
+                <select id="pigeonColorInput">
+                  <option value="teal">Teal</option>
+                  <option value="coral">Coral</option>
+                  <option value="violet">Violet</option>
+                  <option value="amber">Amber</option>
+                </select>
+              </label>
+            </div>
+            <div class="button-row" style="margin-top: 12px">
+              <button id="saveIdentity" type="button">Save Identity</button>
+              <button id="toggleEdit" class="secondary" type="button">Toggle Edit Mode</button>
+            </div>
+            <p class="last-action" id="lastAction">Last Action: none</p>
+          </div>
+
+          <div class="card" style="margin-bottom: 10px">
+            <h3 class="section-title">Actions</h3>
+            <p class="section-subtitle">Every button logs to the debug panel and updates state.</p>
+            <div class="button-row">
+              <button id="resetSession" type="button">Reset Testing Session</button>
+              <button id="openMessages" type="button">Open Messages Panel</button>
+              <button id="toggleHistory" type="button">Toggle History Panel</button>
+              <button id="checkWeatherBtn" type="button">Check Weather Now</button>
+            </div>
+          </div>
+
+          <div class="card">
+            <h3 class="section-title">Tamagotchi Pigeon</h3>
+            <p class="section-subtitle">Framed pixel slot to ensure a fresh visual reset.</p>
+            <div class="pixel-frame">
+              <div class="pixel-placeholder">
+                <p>._.</p>
+                <p>/|\\</p>
+                <p> / \\</p>
+                <p>Pigeon V2</p>
+              </div>
+            </div>
+          </div>
+        </section>
+
+        <section class="panel-stack">
+          <div class="card" id="messagesPanel">
+            <h3 class="section-title">Messages Panel</h3>
+            <p class="section-subtitle">Compose and send; every send is logged.</p>
+            <div class="input-grid">
+              <div class="input-row">
+                <label>
+                  <span class="label">To</span>
+                  <input id="msgTo" type="text" placeholder="Friend" />
+                </label>
+                <label>
+                  <span class="label">From</span>
+                  <input id="msgFrom" type="text" placeholder="You" />
+                </label>
+              </div>
+              <label>
+                <span class="label">Body</span>
+                <textarea id="msgBody" maxlength="200" placeholder="Send a short note."></textarea>
+              </label>
+              <div class="button-row">
+                <button id="sendMessage" type="button">Send Message</button>
+                <button id="clearInputs" class="secondary" type="button">Clear Inputs</button>
+              </div>
+            </div>
+            <h4 class="log-label">History Preview</h4>
+            <ul id="messageHistory" class="message-list"></ul>
+          </div>
+
+          <div class="card" id="historyPanel">
+            <h3 class="section-title">History Panel</h3>
+            <p class="section-subtitle">Local log saved in browser storage.</p>
+            <div id="historyContent" class="message-list"></div>
+          </div>
+
+          <div class="card" id="weatherPanel">
+            <h3 class="section-title">Weather Panel</h3>
+            <p class="section-subtitle">Deterministic unless a weather key is provided.</p>
+            <div class="grid-split">
+              <label>
+                <span class="label">Location</span>
+                <input id="weatherLocation" type="text" placeholder="Seattle" />
+              </label>
+              <label>
+                <span class="label">Status</span>
+                <input id="weatherStatus" type="text" readonly />
+              </label>
+              <label>
+                <span class="label">Temperature (°F)</span>
+                <input id="weatherTemp" type="text" readonly />
+              </label>
+              <label>
+                <span class="label">Mock?</span>
+                <input id="weatherMock" type="text" readonly />
+              </label>
+            </div>
+            <p class="log-label" id="weatherUpdated">No checks yet.</p>
+            <small class="note">Set <code>window.PIGEON_WEATHER_API_KEY</code> before loading to hit WeatherAPI.com. Otherwise a deterministic mock is used.</small>
+          </div>
+
+          <div class="footer">
+            V2 Build: 1a4cc07 — instrumented for interaction validation.
+          </div>
+        </section>
+      </main>
+    </div>
+
+    <div class="debug-panel" aria-live="polite">
+      <header>
+        <div>
+          <strong>Debug Console</strong>
+          <p class="log-label">Global errors + click capture</p>
+        </div>
+        <div class="button-row" style="grid-template-columns: repeat(auto-fit, minmax(120px, 1fr)); gap: 6px; width: 50%">
+          <button id="scanIntercepts" class="secondary" type="button">Scan Intercepts</button>
+          <button id="triggerError" class="secondary" type="button">Trigger Test Error</button>
+          <button id="hardReset" class="button--outline" type="button">Hard Reset All</button>
+        </div>
+      </header>
+      <div class="debug-body">
+        <div class="debug-columns">
+          <div>
+            <p class="log-label">Logs</p>
+            <ul id="debugLog"></ul>
+          </div>
+          <div>
+            <p class="log-label">Errors</p>
+            <ul id="errorLog"></ul>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <script type="module" src="v2.js"></script>
+  </body>
+</html>
