@@ -1,0 +1,35 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 64 64" shape-rendering="crispEdges">
+  <rect width="64" height="64" fill="#2fc3bc"/>
+  <!-- shadow base -->
+  <rect x="18" y="48" width="28" height="4" fill="#1b8c86"/>
+  <!-- seed crumbs -->
+  <rect x="22" y="45" width="2" height="2" fill="#e2b041"/>
+  <rect x="26" y="46" width="2" height="2" fill="#f4cf73"/>
+  <!-- body -->
+  <rect x="18" y="22" width="30" height="22" fill="#cdd9e8" stroke="#0b0f1a" stroke-width="2"/>
+  <rect x="20" y="24" width="14" height="18" fill="#e6ecf5"/>
+  <rect x="34" y="26" width="12" height="10" fill="#b9c6d6"/>
+  <!-- wing -->
+  <rect x="32" y="30" width="14" height="10" fill="#9fb1c5" stroke="#0b0f1a" stroke-width="2"/>
+  <!-- crest -->
+  <rect x="16" y="16" width="10" height="4" fill="#f1d64b" stroke="#0b0f1a" stroke-width="2"/>
+  <rect x="20" y="12" width="6" height="6" fill="#f9e27f" stroke="#0b0f1a" stroke-width="2"/>
+  <!-- head -->
+  <rect x="16" y="18" width="14" height="12" fill="#e6ecf5" stroke="#0b0f1a" stroke-width="2"/>
+  <!-- eye -->
+  <rect x="22" y="22" width="4" height="4" fill="#0b0f1a"/>
+  <rect x="23" y="23" width="2" height="2" fill="#f5f8ff"/>
+  <!-- beak -->
+  <rect x="30" y="24" width="4" height="4" fill="#f0b542" stroke="#0b0f1a" stroke-width="2"/>
+  <!-- satchel strap -->
+  <rect x="16" y="30" width="4" height="12" fill="#f0b542" stroke="#0b0f1a" stroke-width="2"/>
+  <rect x="20" y="32" width="8" height="4" fill="#d8982e" stroke="#0b0f1a" stroke-width="2"/>
+  <!-- feet -->
+  <rect x="22" y="44" width="4" height="2" fill="#f0b542" stroke="#0b0f1a" stroke-width="2"/>
+  <rect x="30" y="44" width="4" height="2" fill="#f0b542" stroke="#0b0f1a" stroke-width="2"/>
+  <!-- heart speech bubble -->
+  <rect x="42" y="14" width="12" height="12" fill="#f5f8ff" stroke="#0b0f1a" stroke-width="2"/>
+  <rect x="48" y="26" width="4" height="4" fill="#f5f8ff" stroke="#0b0f1a" stroke-width="2"/>
+  <rect x="46" y="28" width="2" height="4" fill="#f5f8ff" stroke="#0b0f1a" stroke-width="2"/>
+  <rect x="45" y="18" width="6" height="6" fill="#f16464" stroke="#0b0f1a" stroke-width="2"/>
+</svg>
