@@ -336,6 +336,13 @@ const BADGE_RULES = [
   { id: 'marathon', label: 'Marathon Flyer', test: (s) => s.mileage >= 50 },
 ];
 
+const deepClone = (value) => {
+  if (typeof structuredClone === 'function') {
+    return structuredClone(value);
+  }
+  return JSON.parse(JSON.stringify(value));
+};
+
 const DEFAULT_STATE = {
   pigeon: {
     name: 'Sky Courier',
@@ -408,21 +415,21 @@ let deliveryTimer;
 
 function loadState() {
   const cached = localStorage.getItem('pigeon-msg-state');
-  if (!cached) return structuredClone(DEFAULT_STATE);
+  if (!cached) return deepClone(DEFAULT_STATE);
   try {
     const parsed = JSON.parse(cached);
     return {
-      ...structuredClone(DEFAULT_STATE),
+      ...deepClone(DEFAULT_STATE),
       ...parsed,
       weather: {
-        ...structuredClone(DEFAULT_STATE.weather),
+        ...deepClone(DEFAULT_STATE.weather),
         ...parsed.weather,
-        from: { ...structuredClone(DEFAULT_STATE.weather.from), ...(parsed.weather?.from || {}) },
-        to: { ...structuredClone(DEFAULT_STATE.weather.to), ...(parsed.weather?.to || {}) },
+        from: { ...deepClone(DEFAULT_STATE.weather.from), ...(parsed.weather?.from || {}) },
+        to: { ...deepClone(DEFAULT_STATE.weather.to), ...(parsed.weather?.to || {}) },
       },
     };
   } catch (err) {
-    return structuredClone(DEFAULT_STATE);
+    return deepClone(DEFAULT_STATE);
   }
 }
 
@@ -626,7 +633,7 @@ function handleSend(event) {
   }
 
   const msg = {
-    id: crypto.randomUUID(),
+    id: crypto.randomUUID?.() || `msg-${Math.random().toString(16).slice(2)}`,
     from: formatPhone(fromPhoneInput.value),
     to: formatPhone(toPhoneInput.value),
     fromAreaCode,
