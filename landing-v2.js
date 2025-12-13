@@ -54,13 +54,6 @@
     logOutput: qs('logOutput'),
     pigeonGearImage: qs('pigeonGearImage'),
     pigeonPlaceholder: qs('pigeonPlaceholder'),
-    editStatus: qs('editStatus'),
-    resetStatus: qs('resetStatus'),
-    messageStatus: qs('messageStatus'),
-    historyStatus: qs('historyStatus'),
-    weatherStatus: qs('weatherStatus'),
-    weatherDetailBtn: qs('weatherDetailBtn'),
-    coopBadge: qs('coopBadge'),
   };
 
   function deepClone(obj) {
@@ -133,12 +126,6 @@
     elements.messageCount.textContent = state.stats.history.length;
     elements.historyCount.textContent = state.stats.history.length;
     elements.stateVersionLabel.textContent = `State v${STATE_VERSION}`;
-    elements.editStatus.textContent = state.runtime.editMode ? 'on' : 'off';
-    elements.messageStatus.textContent = state.runtime.composerOpen ? 'open' : 'closed';
-    elements.historyStatus.textContent = state.runtime.showHistory ? 'visible' : 'hidden';
-    elements.resetStatus.textContent = state.runtime.sessionFlag || 'ready';
-    elements.weatherStatus.textContent = state.runtime.weather.lastChecked ? 'checked' : 'idle';
-    elements.coopBadge.textContent = 'coop intact';
   }
 
   function renderHistory() {
@@ -186,7 +173,6 @@
 
   async function checkWeather() {
     log('clicked: check-weather');
-    elements.weatherStatus.textContent = 'checking…';
     elements.weatherResult.textContent = 'Checking weather…';
     const key = window?.WEATHER_API_KEY || window?.env?.WEATHER_API_KEY;
     const fallbackSummary = 'Clear skies over the coop. Flight path is safe.';
@@ -201,18 +187,23 @@
         const data = await resp.json();
         summary = `${data.location.name}: ${data.current.condition.text}, ${data.current.temp_f}°F`;
       } else {
-        summary = 'Deterministic mock: NYC, calm winds, 68°F, clear skies.';
+        const resp = await fetch(
+          'https://api.open-meteo.com/v1/forecast?latitude=40.7128&longitude=-74.0060&current_weather=true'
+        );
+        if (resp.ok) {
+          const data = await resp.json();
+          const weather = data.current_weather;
+          summary = `NYC Open-Meteo: ${weather.weathercode} code, ${weather.temperature}°C, winds ${weather.windspeed}km/h`;
+        }
       }
       state.runtime.weather.lastChecked = Date.now();
       state.runtime.weather.summary = summary;
       renderWeather();
-      elements.weatherStatus.textContent = 'checked';
       log('weather updated', summary);
     } catch (err) {
       state.runtime.weather.lastChecked = Date.now();
       state.runtime.weather.summary = fallbackSummary;
       renderWeather();
-      elements.weatherStatus.textContent = 'fallback';
       log('weather fallback', err?.message || 'unknown error');
     }
     saveState(state);
@@ -280,7 +271,6 @@
     elements.historyBtn.addEventListener('click', toggleHistory);
     elements.messageBtn.addEventListener('click', openComposer);
     elements.weatherBtn.addEventListener('click', checkWeather);
-    elements.weatherDetailBtn.addEventListener('click', checkWeather);
     elements.sendBtn.addEventListener('click', sendMessage);
     elements.closeComposer.addEventListener('click', closeComposerPanel);
   }

@@ -24,76 +24,28 @@
       </div>
     </header>
 
-    <section class="action-deck" aria-label="Primary actions">
-      <div class="action-card">
-        <div class="action-meta">
-          <p>Edit Mode</p>
-          <span id="editStatus" class="chip">off</span>
-        </div>
-        <button id="editBtn" type="button" class="primary full">Edit</button>
-        <p class="tiny">Toggle to edit pigeon name and signature color.</p>
-      </div>
-      <div class="action-card">
-        <div class="action-meta">
-          <p>Reset Runtime</p>
-          <span id="resetStatus" class="chip">ready</span>
-        </div>
-        <button id="resetBtn" type="button" class="ghost full">Reset</button>
-        <p class="tiny">Clears daily limits/testing only—coop, XP, badges stay.</p>
-      </div>
-      <div class="action-card">
-        <div class="action-meta">
-          <p>Message</p>
-          <span id="messageStatus" class="chip">closed</span>
-        </div>
-        <button id="messageBtn" type="button" class="primary full">Message</button>
-        <p class="tiny">Opens composer; send will append to history.</p>
-      </div>
-      <div class="action-card">
-        <div class="action-meta">
-          <p>History</p>
-          <span id="historyStatus" class="chip">hidden</span>
-        </div>
-        <button id="historyBtn" type="button" class="ghost full">History</button>
-        <p class="tiny">Toggles the list of sent messages.</p>
-      </div>
-      <div class="action-card">
-        <div class="action-meta">
-          <p>Weather</p>
-          <span id="weatherStatus" class="chip">idle</span>
-        </div>
-        <button id="weatherBtn" type="button" class="primary full">Check Weather</button>
-        <p class="tiny">Uses API key when present, deterministic fallback otherwise.</p>
-      </div>
-    </section>
-
     <section class="panels">
       <div class="panel column">
-        <div class="panel-header">
-          <div>
-            <h2>Coop Controls</h2>
-            <p class="helper">Edit enables fields; Reset never deletes coop or progress.</p>
-          </div>
-          <div class="pill muted-pill">
-            <span id="coopBadge">coop intact</span>
-          </div>
+        <h2>Coop Controls</h2>
+        <p class="helper">Edit toggles the fields. Reset touches only daily/testing state.</p>
+        <div class="input-block">
+          <label>Pigeon Name
+            <input id="pigeonName" type="text" maxlength="20" />
+          </label>
         </div>
-        <div class="input-grid">
-          <div class="input-block">
-            <label>Pigeon Name
-              <input id="pigeonName" type="text" maxlength="20" />
-            </label>
-          </div>
-          <div class="input-block">
-            <label>Signature Color
-              <select id="pigeonColor">
-                <option value="silver">Silver</option>
-                <option value="gold">Gold</option>
-                <option value="indigo">Indigo</option>
-                <option value="rose">Rose</option>
-              </select>
-            </label>
-          </div>
+        <div class="input-block">
+          <label>Signature Color
+            <select id="pigeonColor">
+              <option value="silver">Silver</option>
+              <option value="gold">Gold</option>
+              <option value="indigo">Indigo</option>
+              <option value="rose">Rose</option>
+            </select>
+          </label>
+        </div>
+        <div class="button-row">
+          <button id="editBtn" type="button" class="primary">Edit</button>
+          <button id="resetBtn" type="button" class="ghost">Reset</button>
         </div>
         <div class="pixel-frame" id="pigeonFrame">
           <img id="pigeonGearImage" alt="Pigeon gear preview" />
@@ -108,6 +60,10 @@
       <div class="panel column">
         <h2>Messaging</h2>
         <p class="helper">Message opens the composer. History toggles the panel.</p>
+        <div class="button-row">
+          <button id="messageBtn" type="button" class="primary">Message</button>
+          <button id="historyBtn" type="button" class="ghost">History</button>
+        </div>
         <div id="composer" class="composer" hidden>
           <label class="input-block">Message Text
             <textarea id="messageText" rows="3" maxlength="200" placeholder="Send a cozy note."></textarea>
@@ -132,7 +88,7 @@
         <div class="weather-card">
           <p id="weatherResult">No check yet.</p>
           <p id="weatherMeta" class="tiny">Last checked: never</p>
-          <button id="weatherDetailBtn" type="button" class="ghost full">Re-check</button>
+          <button id="weatherBtn" type="button" class="primary full">Check Weather</button>
         </div>
         <div class="runtime-card">
           <h3>Runtime State</h3>

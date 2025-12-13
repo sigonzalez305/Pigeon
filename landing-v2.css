@@ -94,68 +94,12 @@ body {
   gap: 16px;
 }
 
-.action-deck {
-  display: grid;
-  grid-template-columns: repeat(auto-fit, minmax(180px, 1fr));
-  gap: 12px;
-}
-
-.action-card {
-  border: 1px solid var(--border);
-  border-radius: 14px;
-  padding: 12px;
-  background: rgba(17, 24, 39, 0.9);
-  box-shadow: var(--shadow);
-  display: flex;
-  flex-direction: column;
-  gap: 8px;
-  min-height: 120px;
-  position: relative;
-}
-
-.action-meta {
-  display: flex;
-  align-items: center;
-  justify-content: space-between;
-  gap: 10px;
-}
-
-.chip {
-  background: #0b1220;
-  border: 1px solid var(--border);
-  border-radius: 999px;
-  padding: 4px 10px;
-  font-size: 12px;
-  color: var(--accent);
-  white-space: nowrap;
-}
-
 .panel {
   background: var(--panel);
   border: 1px solid var(--border);
   border-radius: 16px;
   padding: 16px;
   box-shadow: var(--shadow);
-  position: relative;
-}
-
-.panel-header {
-  display: flex;
-  align-items: center;
-  justify-content: space-between;
-  gap: 10px;
-}
-
-.pill {
-  background: #1f2937;
-  border-radius: 999px;
-  padding: 6px 10px;
-  color: var(--accent);
-}
-
-.muted-pill {
-  color: var(--muted);
-  border: 1px dashed var(--border);
 }
 
 .column h2 {
@@ -172,12 +116,6 @@ body {
   flex-direction: column;
   gap: 8px;
   margin-bottom: 12px;
-}
-
-.input-grid {
-  display: grid;
-  grid-template-columns: repeat(auto-fit, minmax(220px, 1fr));
-  gap: 12px;
 }
 
 .input-block label {
@@ -214,7 +152,6 @@ button {
   font-weight: 700;
   font-size: 14px;
   transition: transform 0.1s ease, box-shadow 0.1s ease;
-  pointer-events: auto;
 }
 
 button:active { transform: translateY(1px); }
@@ -296,6 +233,13 @@ button:active { transform: translateY(1px); }
   font-weight: 700;
 }
 
+.pill {
+  background: #1f2937;
+  border-radius: 999px;
+  padding: 6px 10px;
+  color: var(--accent);
+}
+
 .history ul, .history li { margin: 0; padding: 0; list-style: none; }
 
 #historyList li {
@@ -349,7 +293,7 @@ button:active { transform: translateY(1px); }
   gap: 12px;
 }
 
-.log-output { 
+.log-output {
   background: #0b1220;
   border: 1px solid var(--border);
   border-radius: 12px;
