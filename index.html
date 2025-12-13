@@ -21,13 +21,19 @@
         </div>
       </div>
       <div class="level-card">
-        <p class="label">Pigeon Level</p>
-        <p id="pigeonLevel" class="metric">1</p>
+        <div class="level-top">
+          <div>
+            <p class="label">Pigeon Level</p>
+            <p id="pigeonLevel" class="metric">1</p>
+          </div>
+          <button id="dailyReset" class="tiny reset" type="button" title="Testing only: clears the one-message-per-day limit">reset</button>
+        </div>
         <p class="label">XP</p>
         <div class="meter" aria-label="Experience">
           <div id="xpBar" class="meter-fill" style="width: 5%"></div>
         </div>
         <p id="xpText" class="tiny">0 / 20 XP</p>
+        <p class="tiny reset-note">Testing reset clears the daily limit only. Coop, XP, badges, and history are safe.</p>
       </div>
     </header>
 
@@ -41,20 +47,32 @@
       <div>
         <p id="coopTitle" class="section-title">Pigeon Coop</p>
         <p class="section-copy">Name your pigeon, pick its vibe, and preview its current gear.</p>
-        <div class="coop-controls">
-          <label class="input-block">Pigeon Name
-            <input id="pigeonName" type="text" maxlength="20" placeholder="Sky Courier" />
-          </label>
-          <label class="input-block">Signature Color
-            <select id="pigeonColor">
+        <div class="coop-controls" id="coopControls" aria-live="polite">
+          <div class="input-block readonly-block">
+            <div class="label-row">
+              <span class="label">Pigeon Name</span>
+              <button id="editCoop" class="tiny" type="button">Edit</button>
+            </div>
+            <input id="pigeonName" type="text" maxlength="20" placeholder="Sky Courier" disabled />
+          </div>
+          <div class="input-block readonly-block">
+            <div class="label-row">
+              <span class="label">Signature Color</span>
+            </div>
+            <select id="pigeonColor" disabled>
               <option value="silver">Silver</option>
               <option value="gold">Gold</option>
               <option value="indigo">Indigo</option>
               <option value="rose">Rose</option>
             </select>
-          </label>
+          </div>
         </div>
-        <button class="button coop-cta" type="button" data-screen-button="message">Go to Messaging</button>
+        <div class="pet-row">
+          <button id="petPigeon" class="button button-secondary" type="button">Pet</button>
+          <button id="feedPigeon" class="button button-secondary" type="button">Give Snack</button>
+          <span id="pigeonMood" class="tiny" aria-live="polite">Your pigeon looks curious.</span>
+        </div>
+        <button class="button coop-cta" type="button" data-screen-button="message">Select pigeon & compose</button>
       </div>
       <div class="pigeon-preview" aria-label="Current pigeon preview">
         <div class="pigeon-body" id="pigeonBody">
@@ -76,20 +94,22 @@
         <div class="chat-window" id="chatWindow" aria-live="polite"></div>
         <form id="messageForm" class="form-grid chat-composer">
           <div class="dual-input">
-            <label class="input-block">From Area Code
-              <select id="fromAreaCode"></select>
+            <label class="input-block">From Phone (US only)
+              <input id="fromPhone" type="tel" inputmode="tel" maxlength="14" placeholder="2125551234" />
             </label>
-            <label class="input-block">From Number
-              <input id="fromNumber" type="tel" inputmode="tel" maxlength="12" placeholder="555-1234" />
+            <label class="input-block">To Phone (US only)
+              <input id="toPhone" type="tel" inputmode="tel" maxlength="14" placeholder="4155556789" />
             </label>
           </div>
           <div class="dual-input">
-            <label class="input-block">To Area Code
-              <select id="toAreaCode"></select>
-            </label>
-            <label class="input-block">To Number
-              <input id="toNumber" type="tel" inputmode="tel" maxlength="12" placeholder="555-6789" />
-            </label>
+            <div class="input-block">
+              <span class="label">From region</span>
+              <p id="fromRegion" class="metric tiny-block">Waiting for area code…</p>
+            </div>
+            <div class="input-block">
+              <span class="label">To region</span>
+              <p id="toRegion" class="metric tiny-block">Waiting for area code…</p>
+            </div>
           </div>
           <label class="input-block">Purpose
             <select id="purpose">
@@ -128,7 +148,25 @@
       </div>
       <div class="map-wrapper">
         <div class="pixel-map">
-          <div id="flightIcon" class="flight-icon" aria-hidden="true">🕊️</div>
+          <svg id="flightMap" viewBox="0 0 800 480" role="presentation">
+            <defs>
+              <linearGradient id="sky" x1="0" x2="1" y1="0" y2="1">
+                <stop offset="0%" stop-color="#1c2541" />
+                <stop offset="100%" stop-color="#0b132b" />
+              </linearGradient>
+            </defs>
+            <rect width="800" height="480" rx="12" fill="url(#sky)" />
+            <g id="mapGrid" stroke="#2b3957" stroke-width="1" opacity="0.25"></g>
+            <g id="usOutline" fill="#14213d" stroke="#2b3957" stroke-width="3" opacity="0.9"></g>
+            <path id="flightPath" d="" fill="none" stroke="#67f3a5" stroke-width="4" stroke-dasharray="6 10" opacity="0.7" />
+            <circle id="fromMarker" r="8" fill="#67f3a5" stroke="#0b0f1a" stroke-width="3" />
+            <circle id="toMarker" r="8" fill="#5db0ff" stroke="#0b0f1a" stroke-width="3" />
+            <text id="fromLabel" class="map-label" x="0" y="0">FROM</text>
+            <text id="toLabel" class="map-label" x="0" y="0">TO</text>
+            <g id="flightSprite" class="flight-icon" aria-hidden="true">
+              <text x="0" y="0" font-size="26">🕊️</text>
+            </g>
+          </svg>
         </div>
         <div class="journey-stats">
           <div class="stat-card">
@@ -154,6 +192,7 @@
         <p class="section-copy">Local log of every message you’ve launched, saved in your browser.</p>
       </div>
       <div id="historyList" class="history-list" aria-live="polite"></div>
+      <p class="tiny">Message history, badges, XP, and your pigeon’s style never reset. The testing reset clears only today’s send limit.</p>
     </section>
   </main>
 
