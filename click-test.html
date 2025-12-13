@@ -1,0 +1,48 @@
+<!DOCTYPE html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>Pigeon Click Test</title>
+    <style>
+      body {
+        font-family: system-ui, -apple-system, sans-serif;
+        padding: 20px;
+      }
+      button {
+        display: block;
+        margin: 8px 0;
+        padding: 12px;
+        font-size: 16px;
+      }
+      #log {
+        border: 1px solid #ccc;
+        padding: 10px;
+        min-height: 100px;
+      }
+    </style>
+  </head>
+  <body>
+    <h1>Click Test Harness</h1>
+    <p>Each button writes to the on-page log. If this page fails, the issue is outside the main app.</p>
+    <div id="buttons"></div>
+    <div id="log"></div>
+    <script>
+      const logBox = document.querySelector('#log');
+      const btnContainer = document.querySelector('#buttons');
+      function append(message) {
+        const entry = document.createElement('div');
+        entry.textContent = `[${new Date().toLocaleTimeString()}] ${message}`;
+        logBox.appendChild(entry);
+      }
+      for (let i = 1; i <= 5; i++) {
+        const btn = document.createElement('button');
+        btn.textContent = `Button ${i}`;
+        btn.addEventListener('click', () => append(`Button ${i} clicked`));
+        btnContainer.appendChild(btn);
+      }
+      append('Harness ready');
+      window.onerror = (msg, url, line, col, err) => append(`Error: ${msg} @ ${url}:${line}`);
+    </script>
+  </body>
+</html>
