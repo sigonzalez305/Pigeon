@@ -340,7 +340,7 @@ const DEFAULT_STATE = {
   pigeon: {
     name: 'Sky Courier',
     color: 'silver',
-    accessory: 'Starter Satchel',
+    accessory: 'Tamagotchi Buddy Pack',
     level: 1,
     xp: 0,
   },
@@ -359,6 +359,7 @@ const DEFAULT_STATE = {
 };
 
 let state = loadState();
+const root = document.documentElement;
 
 // DOM lookups
 const levelEl = document.getElementById('pigeonLevel');
@@ -372,8 +373,6 @@ const weatherImpactEl = document.getElementById('weatherImpact');
 const pigeonNameInput = document.getElementById('pigeonName');
 const pigeonColorInput = document.getElementById('pigeonColor');
 const pigeonAccessoryLabel = document.getElementById('pigeonAccessoryLabel');
-const pigeonBody = document.getElementById('pigeonBody');
-const pigeonAccessory = document.getElementById('pigeonAccessory');
 const dailyStatusEl = document.getElementById('dailyStatus');
 const checkWeatherBtn = document.getElementById('checkWeather');
 const form = document.getElementById('messageForm');
@@ -405,7 +404,6 @@ const flightSprite = document.getElementById('flightSprite');
 const fromLabel = document.getElementById('fromLabel');
 const toLabel = document.getElementById('toLabel');
 
-const OPEN_WEATHER_KEY = 'YOUR_OPENWEATHERMAP_KEY';
 let deliveryTimer;
 
 function loadState() {
@@ -445,14 +443,15 @@ function renderStats() {
   xpBarEl.style.width = `${percent}%`;
   milesEl.textContent = state.mileage.toFixed(1);
 
-  const colorMap = {
-    silver: '#c5d6f4',
-    gold: '#ffd166',
-    indigo: '#8da2ff',
-    rose: '#ffb3c1',
+  const colorFilters = {
+    silver: 'brightness(1)',
+    gold: 'sepia(0.35) saturate(1.6) hue-rotate(-20deg)',
+    indigo: 'hue-rotate(200deg) saturate(1.4)',
+    rose: 'hue-rotate(320deg) saturate(1.3)',
   };
-  pigeonBody.style.background = colorMap[state.pigeon.color];
-  pigeonAccessory.textContent = pickAccessoryEmoji(state.pigeon.accessory);
+  const baseShadow = 'drop-shadow(0 6px 0 #0b0f1a)';
+  const colorFilter = colorFilters[state.pigeon.color] || 'brightness(1)';
+  root.style.setProperty('--pigeon-filter', `${colorFilter} ${baseShadow}`);
   pigeonAccessoryLabel.textContent = state.pigeon.accessory;
   pigeonNameInput.value = state.pigeon.name;
   pigeonColorInput.value = state.pigeon.color;
@@ -591,13 +590,6 @@ function gainXp(amount) {
   }
 }
 
-function pickAccessoryEmoji(label) {
-  if (label.includes('Storm')) return '⛈️';
-  if (label.includes('Royal')) return '👑';
-  if (label.includes('Scout')) return '🧢';
-  return '🎒';
-}
-
 function pickNewAccessory(level) {
   if (level >= 5) return 'Royal Cloak';
   if (level >= 3) return 'Storm Runner Scarf';
@@ -725,19 +717,26 @@ async function handleWeatherCheck() {
 }
 
 async function fetchWeatherSummary(area) {
-  if (!OPEN_WEATHER_KEY || OPEN_WEATHER_KEY.includes('YOUR_OPEN')) {
-    return 'Unavailable';
-  }
   try {
-    const url = `https://api.openweathermap.org/data/2.5/weather?lat=${area.lat}&lon=${area.lon}&units=metric&appid=${OPEN_WEATHER_KEY}`;
+    const url = `https://api.open-meteo.com/v1/forecast?latitude=${area.lat}&longitude=${area.lon}&current_weather=true`;
     const res = await fetch(url);
     if (!res.ok) throw new Error('Bad response');
     const data = await res.json();
-    return data.weather?.[0]?.main || 'Clear';
+    return mapWeatherCode(data.current_weather?.weathercode);
   } catch (err) {
     weatherImpactEl.textContent = 'Weather check failed. Try again soon.';
     return 'Unavailable';
   }
+}
+
+function mapWeatherCode(code) {
+  if (code === undefined || code === null) return 'Unavailable';
+  if ([95, 96, 99].includes(code)) return 'Storm';
+  if ([80, 81, 82, 51, 53, 55, 56, 57].includes(code)) return 'Rain';
+  if ([71, 73, 75, 77, 85, 86].includes(code)) return 'Snow';
+  if ([45, 48, 1, 2, 3].includes(code)) return 'Clouds';
+  if (code === 0) return 'Clear';
+  return 'Clear';
 }
 
 function pickImpactLabel(description) {
