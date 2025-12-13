@@ -1,0 +1,161 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <meta http-equiv="Content-Security-Policy" content="default-src 'self'; style-src 'self' 'unsafe-inline'; script-src 'self'; connect-src 'self' https://api.weatherapi.com; img-src 'self' data: https:;">
+  <title>PIGEON - Slow Messages, Delivered with Care</title>
+  <link rel="stylesheet" href="pigeon-app.css">
+</head>
+<body>
+  <!-- Main App Container -->
+  <div id="app" class="app-container">
+
+    <!-- Header -->
+    <header class="app-header">
+      <h1 class="app-title">🐦 PIGEON</h1>
+      <p class="app-subtitle">Slow messages, delivered with care</p>
+    </header>
+
+    <!-- Pigeon Display (Tamagotchi-style) -->
+    <section class="pigeon-display">
+      <div class="pigeon-screen">
+        <div class="pigeon-avatar" id="pigeonAvatar">
+          <div class="pigeon-sprite">🕊️</div>
+        </div>
+        <div class="pigeon-info" id="pigeonInfo">
+          <div class="pigeon-name">Loading...</div>
+          <div class="pigeon-stats">
+            <div class="stat">
+              <span class="stat-label">Mood:</span>
+              <span class="stat-value" id="pigeonMood">neutral</span>
+            </div>
+            <div class="stat">
+              <span class="stat-label">Energy:</span>
+              <span class="stat-value" id="pigeonEnergy">100</span>
+            </div>
+            <div class="stat">
+              <span class="stat-label">Level:</span>
+              <span class="stat-value" id="pigeonLevel">1</span>
+            </div>
+            <div class="stat">
+              <span class="stat-label">XP:</span>
+              <span class="stat-value" id="pigeonXP">0</span>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <!-- Status Bar -->
+      <div class="status-bar">
+        <div class="status-item">
+          <span class="status-label">Messages today:</span>
+          <span class="status-value" id="messagesUsed">0</span>
+          <span class="status-label">/</span>
+          <span class="status-value" id="messagesLimit">3</span>
+        </div>
+        <div class="status-item">
+          <span class="status-label">Last delivery:</span>
+          <span class="status-value" id="lastDelivery">Never</span>
+        </div>
+      </div>
+    </section>
+
+    <!-- Action Buttons -->
+    <section class="action-buttons">
+      <button class="btn btn-primary" id="btnEditPigeon" data-action="edit-pigeon">
+        ✏️ Edit Pigeon
+      </button>
+      <button class="btn btn-primary" id="btnSendMessage" data-action="send-message">
+        📨 Send Message
+      </button>
+      <button class="btn btn-secondary" id="btnHistory" data-action="view-history">
+        📜 Message History
+      </button>
+      <button class="btn btn-secondary" id="btnWeather" data-action="check-weather">
+        🌤️ Check Weather
+      </button>
+      <button class="btn btn-tertiary" id="btnReset" data-action="reset-session">
+        🔄 Reset Daily Session
+      </button>
+    </section>
+
+    <!-- Edit Pigeon Panel (Hidden by default) -->
+    <section class="panel hidden" id="panelEditPigeon">
+      <div class="panel-header">
+        <h2>Edit Your Pigeon</h2>
+        <button class="btn-close" data-action="close-edit">✕</button>
+      </div>
+      <div class="panel-content">
+        <div class="form-group">
+          <label for="inputPigeonName">Name (max 20 characters):</label>
+          <input type="text" id="inputPigeonName" maxlength="20" placeholder="Courier">
+        </div>
+        <div class="form-group">
+          <label for="inputPigeonColor">Color:</label>
+          <input type="color" id="inputPigeonColor" value="#8B7355">
+        </div>
+        <button class="btn btn-primary" data-action="save-pigeon">💾 Save Changes</button>
+      </div>
+    </section>
+
+    <!-- Send Message Panel (Hidden by default) -->
+    <section class="panel hidden" id="panelSendMessage">
+      <div class="panel-header">
+        <h2>Send a Message</h2>
+        <button class="btn-close" data-action="close-send">✕</button>
+      </div>
+      <div class="panel-content">
+        <div class="form-group">
+          <label for="inputFromArea">From Area Code:</label>
+          <input type="text" id="inputFromArea" maxlength="3" pattern="[0-9]{3}" placeholder="212">
+        </div>
+        <div class="form-group">
+          <label for="inputToArea">To Area Code:</label>
+          <input type="text" id="inputToArea" maxlength="3" pattern="[0-9]{3}" placeholder="415">
+        </div>
+        <div class="form-group">
+          <label for="inputMessage">Message (max 500 characters):</label>
+          <textarea id="inputMessage" maxlength="500" rows="4" placeholder="Your message here..."></textarea>
+        </div>
+        <div class="message-preview" id="messagePreview">
+          <strong>Estimated Delivery:</strong>
+          <span id="estimatedDelivery">Calculate weather first</span>
+        </div>
+        <button class="btn btn-primary" data-action="send-now">🕊️ Send Now</button>
+      </div>
+    </section>
+
+    <!-- Message History Panel (Hidden by default) -->
+    <section class="panel hidden" id="panelHistory">
+      <div class="panel-header">
+        <h2>Message History</h2>
+        <button class="btn-close" data-action="close-history">✕</button>
+      </div>
+      <div class="panel-content">
+        <div id="historyList" class="history-list">
+          <p class="empty-state">No messages sent yet</p>
+        </div>
+      </div>
+    </section>
+
+    <!-- Weather Panel (Hidden by default) -->
+    <section class="panel hidden" id="panelWeather">
+      <div class="panel-header">
+        <h2>Weather Report</h2>
+        <button class="btn-close" data-action="close-weather">✕</button>
+      </div>
+      <div class="panel-content">
+        <div id="weatherDisplay" class="weather-display">
+          <p>Enter area codes in the Send Message form to check weather</p>
+        </div>
+      </div>
+    </section>
+
+  </div>
+
+  <!-- Debug Panel (injected by JavaScript) -->
+
+  <script type="module" src="pigeon-app.js"></script>
+</body>
+</html>
