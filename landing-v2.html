@@ -1,0 +1,128 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Pigeon MSG — Landing V2 Debug</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Press+Start+2P&display=swap" rel="stylesheet">
+  <link rel="stylesheet" href="landing-v2.css" />
+</head>
+<body>
+  <div class="banner">V2 DEBUG BUILD</div>
+  <main class="v2-shell">
+    <header class="v2-header">
+      <div>
+        <p class="eyebrow">Pigeon MSG</p>
+        <h1>LandingV2 — Button Proof Build</h1>
+        <p class="lede">Minimal surface area, deterministic behavior, and visible logging for every interaction.</p>
+      </div>
+      <div class="state-pill">
+        <span class="dot" aria-hidden="true"></span>
+        <span id="stateVersionLabel">State v1</span>
+      </div>
+    </header>
+
+    <section class="panels">
+      <div class="panel column">
+        <h2>Coop Controls</h2>
+        <p class="helper">Edit toggles the fields. Reset touches only daily/testing state.</p>
+        <div class="input-block">
+          <label>Pigeon Name
+            <input id="pigeonName" type="text" maxlength="20" />
+          </label>
+        </div>
+        <div class="input-block">
+          <label>Signature Color
+            <select id="pigeonColor">
+              <option value="silver">Silver</option>
+              <option value="gold">Gold</option>
+              <option value="indigo">Indigo</option>
+              <option value="rose">Rose</option>
+            </select>
+          </label>
+        </div>
+        <div class="button-row">
+          <button id="editBtn" type="button" class="primary">Edit</button>
+          <button id="resetBtn" type="button" class="ghost">Reset</button>
+        </div>
+        <div class="pixel-frame" id="pigeonFrame">
+          <img id="pigeonGearImage" alt="Pigeon gear preview" />
+          <div class="placeholder" id="pigeonPlaceholder">
+            <div class="pixel-card">
+              <span class="pixel-title">Tamagotchi Pigeon</span>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <div class="panel column">
+        <h2>Messaging</h2>
+        <p class="helper">Message opens the composer. History toggles the panel.</p>
+        <div class="button-row">
+          <button id="messageBtn" type="button" class="primary">Message</button>
+          <button id="historyBtn" type="button" class="ghost">History</button>
+        </div>
+        <div id="composer" class="composer" hidden>
+          <label class="input-block">Message Text
+            <textarea id="messageText" rows="3" maxlength="200" placeholder="Send a cozy note."></textarea>
+          </label>
+          <div class="button-row">
+            <button id="sendBtn" type="button" class="primary">Send</button>
+            <button id="closeComposer" type="button" class="ghost">Close</button>
+          </div>
+        </div>
+        <div id="historyPanel" class="history" hidden>
+          <div class="history-header">
+            <span>History</span>
+            <span id="historyCount" class="pill">0</span>
+          </div>
+          <ul id="historyList"></ul>
+        </div>
+      </div>
+
+      <div class="panel column">
+        <h2>Weather & Status</h2>
+        <p class="helper">Real fetch when key exists, otherwise deterministic fallback.</p>
+        <div class="weather-card">
+          <p id="weatherResult">No check yet.</p>
+          <p id="weatherMeta" class="tiny">Last checked: never</p>
+          <button id="weatherBtn" type="button" class="primary full">Check Weather</button>
+        </div>
+        <div class="runtime-card">
+          <h3>Runtime State</h3>
+          <div class="runtime-grid">
+            <div>
+              <p class="label">Edit Mode</p>
+              <p id="editState" class="metric">off</p>
+            </div>
+            <div>
+              <p class="label">Daily Limit Used</p>
+              <p id="dailyState" class="metric">false</p>
+            </div>
+            <div>
+              <p class="label">Session Flag</p>
+              <p id="sessionFlag" class="metric">none</p>
+            </div>
+            <div>
+              <p class="label">Messages</p>
+              <p id="messageCount" class="metric">0</p>
+            </div>
+          </div>
+        </div>
+      </div>
+    </section>
+
+    <section class="panel log-panel">
+      <div class="log-header">
+        <h2>Click Proof Console</h2>
+        <p class="tiny">Global capture listener shows every click target and button log.</p>
+      </div>
+      <div id="logOutput" class="log-output" aria-live="polite"></div>
+    </section>
+  </main>
+
+  <script src="landing-v2.js"></script>
+</body>
+</html>
