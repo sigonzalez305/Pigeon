@@ -1,14 +1,67 @@
 /**
+ * ═══════════════════════════════════════════════════════════════════════════
  * PIGEON - State Management Module
+ * ═══════════════════════════════════════════════════════════════════════════
  *
- * Single source of truth with validation, repair, and safe operations.
- * No random behavior. Everything is deterministic and recoverable.
+ * WHAT THIS FILE DOES:
+ * Manages ALL application data (the "state") in one place.
+ * Think of this as the app's memory or database.
+ *
+ * STATE = The current condition of everything in the app
+ * - Pigeon stats (energy, mood, level, XP)
+ * - Messages (sent, delivered, pending)
+ * - Session info (daily limit, message count)
+ * - Weather data
+ *
+ * KEY PRINCIPLES:
+ * 1. Single Source of Truth - One place stores all data
+ * 2. No Random Behavior - Same input always gives same output
+ * 3. Validation - All data is checked and fixed if broken
+ * 4. Persistence - Data saves to localStorage automatically
+ * 5. Reactive - Subscribers get notified when state changes
+ *
+ * WHY THIS MATTERS:
+ * Without state management, data would be scattered everywhere.
+ * This centralized approach makes the app predictable and debuggable.
+ *
+ * ═══════════════════════════════════════════════════════════════════════════
  */
 
+// ═══════════════════════════════════════════════════════════════════════════
+// CONSTANTS - Values that never change
+// ═══════════════════════════════════════════════════════════════════════════
+
+/**
+ * LocalStorage Key
+ * This is the "name" used to save/load data from browser storage.
+ * localStorage is like a simple database built into every browser.
+ */
 const STORAGE_KEY = 'pigeon_app_state';
+
+/**
+ * State Version
+ * If we change the state structure in the future, we can use this
+ * to detect old saved data and migrate it to the new format.
+ */
 const STATE_VERSION = 1;
 
-// Default state shape
+// ═══════════════════════════════════════════════════════════════════════════
+// DEFAULT STATE - Fresh state when no saved data exists
+// ═══════════════════════════════════════════════════════════════════════════
+
+/**
+ * Default State Shape
+ *
+ * This is the "template" for our state.
+ * When a new user opens the app (no saved data), they get this.
+ *
+ * STRUCTURE:
+ * - version: Tracks state format version
+ * - pigeon: All pigeon stats and properties
+ * - session: Temporary session data (resets daily)
+ * - messages: Array of all sent/received messages
+ * - weather: Weather data for message delivery
+ */
 const DEFAULT_STATE = {
   version: STATE_VERSION,
   pigeon: {
@@ -41,14 +94,65 @@ const DEFAULT_STATE = {
   },
 };
 
-// In-memory state
-let state = null;
-const listeners = new Set();
+// ═══════════════════════════════════════════════════════════════════════════
+// MODULE VARIABLES - Internal state storage
+// ═══════════════════════════════════════════════════════════════════════════
 
 /**
- * Generate a deterministic ID based on timestamp
+ * In-Memory State
+ *
+ * This holds the current state while the app is running.
+ * All functions read from and write to this object.
+ * Starts as null, gets loaded from localStorage on init.
+ */
+let state = null;
+
+/**
+ * Listeners (Subscribers)
+ *
+ * A Set of callback functions that want to be notified when state changes.
+ * When state updates, we call all these functions.
+ * This creates "reactive" UI - components update automatically when data changes.
+ *
+ * Set vs Array:
+ * - Set = collection with no duplicates
+ * - Array = ordered list that can have duplicates
+ * - We use Set because we don't want the same listener registered twice
+ */
+const listeners = new Set();
+
+// ═══════════════════════════════════════════════════════════════════════════
+// UTILITY FUNCTIONS
+// ═══════════════════════════════════════════════════════════════════════════
+
+/**
+ * Generate a Deterministic ID
+ *
+ * Creates unique IDs for pigeons, messages, etc.
+ *
+ * FORMAT: prefix + timestamp + random_string
+ * Example: "msg_1699999999999_a4k8f3j2s"
+ *
+ * COMPONENTS:
+ * - prefix: Optional label like "msg_" or "pigeon_"
+ * - Date.now(): Current time in milliseconds (always increasing)
+ * - Math.random().toString(36): Random alphanumeric string
+ *
+ * toString(36) EXPLAINED:
+ * Converts number to base-36 (0-9, a-z)
+ * 0.123456.toString(36) = "0.4fzyo"
+ * We use substr(2, 9) to skip "0." and take 9 characters
+ *
+ * WHY DETERMINISTIC:
+ * "Deterministic" means predictable/repeatable.
+ * Same inputs → same output.
+ * This ID isn't truly random (uses timestamp), but it's unique enough.
+ *
+ * @param {string} prefix - Optional prefix for the ID
+ * @returns {string} - Unique ID string
  */
 function generateId(prefix = '') {
+  // Template literal combines: prefix + timestamp + random string
   return `${prefix}${Date.now()}_${Math.random().toString(36).substr(2, 9)}`;
 }
 
