@@ -3,6 +3,7 @@ package com.pigeon.messenger.security;
 import io.jsonwebtoken.Claims;
 import io.jsonwebtoken.Jwts;
 import io.jsonwebtoken.security.Keys;
+import jakarta.annotation.PostConstruct;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.stereotype.Component;
 
@@ -21,6 +22,24 @@ public class JwtUtil {
 
     @Value("${jwt.expiration}")
     private Long expiration;
+
+    /**
+     * Fails fast at startup rather than at the first login attempt. Without this
+     * a missing JWT_SECRET surfaces as a confusing 500 on the first request
+     * instead of a clear boot error.
+     */
+    @PostConstruct
+    void validateSecret() {
+        if (secret == null || secret.isBlank()) {
+            throw new IllegalStateException(
+                    "jwt.secret is not set. Provide JWT_SECRET (at least 32 characters) "
+                            + "or run with the demo profile for local development.");
+        }
+        if (secret.getBytes(StandardCharsets.UTF_8).length < 32) {
+            throw new IllegalStateException(
+                    "jwt.secret must be at least 32 characters to sign HS256 tokens.");
+        }
+    }
 
     private SecretKey getSigningKey() {
         return Keys.hmacShaKeyFor(secret.getBytes(StandardCharsets.UTF_8));

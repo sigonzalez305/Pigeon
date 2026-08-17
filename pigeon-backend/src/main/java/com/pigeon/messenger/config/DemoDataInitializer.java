@@ -5,6 +5,7 @@ import com.pigeon.messenger.repository.*;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.boot.CommandLineRunner;
 import org.springframework.context.annotation.Profile;
+import org.springframework.core.env.Environment;
 import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.stereotype.Component;
 
@@ -29,8 +30,19 @@ public class DemoDataInitializer implements CommandLineRunner {
     @Autowired
     private PasswordEncoder passwordEncoder;
 
+    @Autowired
+    private Environment environment;
+
     @Override
     public void run(String... args) {
+        // Belt and braces: the @Profile("demo") annotation already scopes this
+        // bean, but seeding known-credential accounts into a production database
+        // is bad enough to be worth a second, explicit refusal.
+        if (environment.matchesProfiles("prod")) {
+            System.out.println("Refusing to seed demo data while the prod profile is active.");
+            return;
+        }
+
         if (userRepository.count() > 0) {
             System.out.println("Demo data already exists. Skipping initialization.");
             return;
@@ -38,10 +50,14 @@ public class DemoDataInitializer implements CommandLineRunner {
 
         System.out.println("Initializing demo data...");
 
-        // Create demo users
-        User alice = createUser("Alice", "+1234567890", "password");
-        User bob = createUser("Bob", "+0987654321", "password");
-        User charlie = createUser("Charlie", "+1112223333", "password");
+        // Phone numbers use real geographic NANP area codes (202 Washington DC,
+        // 305 Miami, 415 San Francisco) so area-code routing resolves them. The
+        // previous placeholders (+0987654321, +1112223333) had area codes
+        // starting with 0 and 1, which NANP forbids and the resolver rejects,
+        // making it impossible to plot a route between demo accounts.
+        User alice = createUser("Alice", "+12025550111", "password");
+        User bob = createUser("Bob", "+13055550178", "password");
+        User charlie = createUser("Charlie", "+14155550142", "password");
 
         // Create demo pigeons
         Pigeon alicePigeon = createPigeon(alice, "Swift", "sprite_blue", "fast");
@@ -60,9 +76,9 @@ public class DemoDataInitializer implements CommandLineRunner {
 
         System.out.println("Demo data initialized successfully!");
         System.out.println("Test accounts:");
-        System.out.println("  Alice: +1234567890 / password");
-        System.out.println("  Bob:   +0987654321 / password");
-        System.out.println("  Charlie: +1112223333 / password");
+        System.out.println("  Alice:   +1 202 555 0111 / password  (Washington, DC)");
+        System.out.println("  Bob:     +1 305 555 0178 / password  (Miami, FL)");
+        System.out.println("  Charlie: +1 415 555 0142 / password  (San Francisco, CA)");
     }
 
     private User createUser(String displayName, String phone, String password) {

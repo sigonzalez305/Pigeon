@@ -36,6 +36,39 @@ public class Flight {
     @Column(length = 20, columnDefinition = "VARCHAR(20) DEFAULT 'flying'")
     private String state = "flying";
 
+    @Column(name = "sender_id")
+    private Long senderId;
+
+    @Column(name = "recipient_phone", length = 20)
+    private String recipientPhone;
+
+    @Column(name = "pigeon_name", length = 50)
+    private String pigeonName;
+
+    @Column(name = "origin_lat")
+    private Double originLat;
+
+    @Column(name = "origin_lon")
+    private Double originLon;
+
+    @Column(name = "origin_region", length = 120)
+    private String originRegion;
+
+    @Column(name = "origin_source", length = 20)
+    private String originSource;
+
+    @Column(name = "destination_lat")
+    private Double destinationLat;
+
+    @Column(name = "destination_lon")
+    private Double destinationLon;
+
+    @Column(name = "destination_region", length = 120)
+    private String destinationRegion;
+
+    @Column(name = "distance_miles")
+    private Double distanceMiles;
+
     @CreatedDate
     @Column(name = "created_at", nullable = false, updatable = false)
     private LocalDateTime createdAt;
