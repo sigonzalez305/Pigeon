@@ -1,0 +1,7 @@
+{
+  "pack": "pico-runtime-atlas-v1",
+  "status": "working-production-atlas",
+  "image": "pico-runtime-atlas-v1.webp",
+  "animationOrder": ["idle","walk","pet-happy","eat","carry-scroll","takeoff","flap","glide","deliver"],
+  "notes": ["Derived from approved Pico runtime art direction", "Next pass normalizes equal frame cells", "Use nearest-neighbor rendering at small display sizes"]
+}
