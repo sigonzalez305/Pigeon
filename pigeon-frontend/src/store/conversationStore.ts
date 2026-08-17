@@ -30,7 +30,7 @@ interface ConversationState {
   addMessage: (message: Message) => void;
 }
 
-export const useConversationStore = create<ConversationState>((set, get) => ({
+export const useConversationStore = create<ConversationState>((set) => ({
   conversations: [],
   messages: {},
 
