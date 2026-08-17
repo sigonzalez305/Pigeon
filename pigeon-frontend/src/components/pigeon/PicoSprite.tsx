@@ -1,5 +1,5 @@
-import { useEffect, useMemo, useState } from 'react';
-import type { PicoAnimation } from '../../assets/picoRuntime';
+import { useEffect, useMemo, useRef, useState } from 'react';
+import { picoStrips, type PicoAnimation } from '../../assets/picoRuntime';
 
 type AnimationConfig = {
   fps: number;
@@ -7,7 +7,7 @@ type AnimationConfig = {
   frames: number;
 };
 
-const CONFIG: Record<PicoAnimation | 'land', AnimationConfig> = {
+const CONFIG: Record<PicoAnimation, AnimationConfig> = {
   idle: { fps: 6, loop: true, frames: 8 },
   walk: { fps: 9, loop: true, frames: 8 },
   'pet-happy': { fps: 8, loop: false, frames: 8 },
@@ -20,16 +20,14 @@ const CONFIG: Record<PicoAnimation | 'land', AnimationConfig> = {
   deliver: { fps: 8, loop: false, frames: 8 },
 };
 
-const RUNTIME_BASE = '/src/assets/asset-bank/production/pico-v1/runtime';
-
 // Walk remains a deliberate alias until its dedicated strip is authored. All
 // flight and delivery states have one-to-one runtime assets.
-const ASSET_ALIAS: Partial<Record<PicoAnimation | 'land', string>> = {
+const ASSET_ALIAS: Partial<Record<PicoAnimation, string>> = {
   walk: 'idle',
 };
 
 export type PicoSpriteProps = {
-  animation?: PicoAnimation | 'land';
+  animation?: PicoAnimation;
   size?: number;
   className?: string;
   paused?: boolean;
@@ -53,7 +51,14 @@ export const PicoSprite = ({
   const [frame, setFrame] = useState(0);
   const [assetFailed, setAssetFailed] = useState(false);
   const reducedMotion = useMemo(prefersReducedMotion, []);
-  const src = `${RUNTIME_BASE}/pico-${ASSET_ALIAS[animation] || animation}.png`;
+  const src = picoStrips[ASSET_ALIAS[animation] ?? animation];
+
+  // Held in a ref so changing the callback identity does not restart the
+  // animation, which would reset the strip to frame 0 on every parent render.
+  const onCompleteRef = useRef(onComplete);
+  useEffect(() => {
+    onCompleteRef.current = onComplete;
+  }, [onComplete]);
 
   useEffect(() => {
     setFrame(0);
@@ -61,24 +66,41 @@ export const PicoSprite = ({
   }, [animation]);
 
   useEffect(() => {
-    if (paused || reducedMotion || assetFailed) return;
+    if (paused) return;
 
     const frameMs = 1000 / config.fps;
-    const timer = window.setInterval(() => {
+    const nominalDurationMs = config.frames * frameMs;
+
+    // onComplete means "this animation has played for its nominal duration",
+    // not "the frame counter reached the end". Deriving it from the frame loop
+    // meant it could never fire for a looping strip, and never fired at all
+    // under reduced motion where the loop does not run. Callers use it to
+    // sequence steps, so it has to be honoured in both cases.
+    const completionTimer = config.loop
+      ? undefined
+      : window.setTimeout(() => onCompleteRef.current?.(), nominalDurationMs);
+
+    if (reducedMotion || assetFailed) {
+      return () => {
+        if (completionTimer !== undefined) window.clearTimeout(completionTimer);
+      };
+    }
+
+    const frameTimer = window.setInterval(() => {
       setFrame((current) => {
         const next = current + 1;
         if (next < config.frames) return next;
-        if (config.loop) return 0;
-        window.clearInterval(timer);
-        onComplete?.();
-        return config.frames - 1;
+        return config.loop ? 0 : config.frames - 1;
       });
     }, frameMs);
 
-    return () => window.clearInterval(timer);
-  }, [animation, assetFailed, config.fps, config.frames, config.loop, onComplete, paused, reducedMotion]);
+    return () => {
+      window.clearInterval(frameTimer);
+      if (completionTimer !== undefined) window.clearTimeout(completionTimer);
+    };
+  }, [animation, assetFailed, config.fps, config.frames, config.loop, paused, reducedMotion]);
 
-  if (assetFailed) {
+  if (assetFailed || !src) {
     return (
       <div
         className={`flex items-center justify-center rounded-full border border-petrol/40 bg-coop-char/70 text-xs text-wheat ${className}`}
@@ -104,7 +126,9 @@ export const PicoSprite = ({
         backgroundRepeat: 'no-repeat',
         backgroundSize: `${config.frames * 100}% 100%`,
         backgroundPosition: `${position}% 0`,
-        imageRendering: 'auto',
+        // The art is pixel-based and two strips are authored at a quarter
+        // resolution, so smoothing them on upscale reads as blur.
+        imageRendering: 'pixelated',
       }}
     >
       <img src={src} alt="" className="hidden" onError={() => setAssetFailed(true)} />

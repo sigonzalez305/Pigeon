@@ -1,4 +1,4 @@
-import { useEffect, useMemo, useState } from 'react';
+import { useEffect, useId, useMemo, useState } from 'react';
 import { AnimatePresence, motion } from 'framer-motion';
 import { ArrowLeft, Check, CloudSun, Feather, LocateFixed, MapPin, Phone } from 'lucide-react';
 import { useNavigate } from 'react-router-dom';
@@ -10,15 +10,43 @@ import type { PicoAnimation } from '../assets/picoRuntime';
 import { AREA_CODE_CENTROIDS } from '../data/areaCodeCentroids';
 import { distanceMiles, requestPreciseLocation, resolveAreaCodeLocation, type RouteLocation } from '../services/location';
 import { fetchFlightWeather, weatherEtaMultiplier, type FlightWeather } from '../services/weather';
+import { PigeonSendError, sendPigeonMessage } from '../services/pigeonMessages';
 
 const STEPS = ['Recipient', 'Pigeon', 'Scroll', 'Skies', 'Launch'] as const;
 type CeremonyPhase = 'ready' | 'carry-scroll' | 'takeoff' | 'flap' | 'glide';
+
+/**
+ * The launch ceremony runs on its own clock.
+ *
+ * It previously advanced when PicoSprite reported an animation had finished,
+ * but the first phase uses a looping strip, and a loop has no completion by
+ * definition — so the ceremony froze on its opening frame and never offered the
+ * exit. Explicit durations make the sequence terminate whatever the sprites do.
+ */
+const CEREMONY_SEQUENCE: ReadonlyArray<{ phase: CeremonyPhase; durationMs: number }> = [
+  { phase: 'carry-scroll', durationMs: 2200 },
+  { phase: 'takeoff', durationMs: 1400 },
+  { phase: 'flap', durationMs: 1800 },
+];
+
+/** Terminal phase: the pigeon is away and the flight view is offered. */
+const FINAL_PHASE: CeremonyPhase = 'glide';
+
+export const nextCeremonyPhase = (phase: CeremonyPhase): CeremonyPhase | null => {
+  const index = CEREMONY_SEQUENCE.findIndex((step) => step.phase === phase);
+  if (index === -1) return null;
+  return CEREMONY_SEQUENCE[index + 1]?.phase ?? FINAL_PHASE;
+};
+
+export const ceremonyPhaseDuration = (phase: CeremonyPhase): number | null =>
+  CEREMONY_SEQUENCE.find((step) => step.phase === phase)?.durationMs ?? null;
 
 export const SendFlow = () => {
   const navigate = useNavigate();
   const { party, activePigeon, fetchParty } = usePigeonStore();
   const user = useAuthStore((state) => state.user);
   const setActiveFlight = useFlightStore((state) => state.setActiveFlight);
+  const setFlightWeather = useFlightStore((state) => state.setFlightWeather);
 
   const [step, setStep] = useState(0);
   const [senderPhone, setSenderPhone] = useState(user?.phone || '');
@@ -27,11 +55,17 @@ export const SendFlow = () => {
   const [selectedPigeon, setSelectedPigeon] = useState<number | null>(null);
   const [phase, setPhase] = useState<CeremonyPhase>('ready');
   const [launched, setLaunched] = useState(false);
+  const [sending, setSending] = useState(false);
+  const [sendError, setSendError] = useState<string | null>(null);
+  // Stable across retries so a resend after a network wobble is recognised as
+  // the same message rather than spending a second daily pigeon.
+  const [clientNonce] = useState(() => crypto.randomUUID?.() || `pigeon-${Date.now()}-${Math.random()}`);
   const [preciseOrigin, setPreciseOrigin] = useState<RouteLocation | null>(null);
   const [originWeather, setOriginWeather] = useState<FlightWeather | null>(null);
   const [destinationWeather, setDestinationWeather] = useState<FlightWeather | null>(null);
   const [weatherLoading, setWeatherLoading] = useState(false);
   const [weatherError, setWeatherError] = useState<string | null>(null);
+  const [locationError, setLocationError] = useState<string | null>(null);
 
   useEffect(() => { fetchParty(); }, [fetchParty]);
   useEffect(() => { if (user?.phone && !senderPhone) setSenderPhone(user.phone); }, [senderPhone, user?.phone]);
@@ -47,8 +81,10 @@ export const SendFlow = () => {
   const origin = preciseOrigin || areaOrigin;
   const routeDistance = origin && destination ? distanceMiles(origin, destination) : null;
 
-  const senderValid = senderPhone.replace(/\D/g, '').length >= 10;
-  const recipientValid = recipientPhone.replace(/\D/g, '').length >= 10;
+  // Routability is checked here rather than at the skies step, so a number that
+  // cannot be routed is caught before the user writes a message for it.
+  const senderValid = senderPhone.replace(/\D/g, '').length >= 10 && Boolean(areaOrigin || preciseOrigin);
+  const recipientValid = recipientPhone.replace(/\D/g, '').length >= 10 && Boolean(destination);
   const messageValid = messageBody.trim().length > 0;
   const routeValid = Boolean(origin && destination);
 
@@ -94,50 +130,63 @@ export const SendFlow = () => {
   }, [step, origin?.latitude, origin?.longitude, destination?.latitude, destination?.longitude]);
 
   const enablePrecisionRouting = async () => {
+    setLocationError(null);
     try {
       const precise = await requestPreciseLocation('Your current area');
       setPreciseOrigin(precise);
     } catch (error) {
-      setWeatherError(error instanceof Error ? error.message : 'Location permission was not available.');
+      // A location problem is not a weather problem; sharing the weather error
+      // channel made "Location permission was not available" read as a failed
+      // forecast lookup.
+      setLocationError(error instanceof Error ? error.message : 'Location permission was not available.');
     }
   };
 
-  const launch = () => {
-    if (!origin || !destination || routeDistance == null) return;
+  const launch = async () => {
+    if (!origin || !destination || routeDistance == null || sending) return;
 
-    const baseSeconds = 60 + Math.floor(Math.random() * 241);
-    const weatherMultiplier = weatherEtaMultiplier(originWeather, destinationWeather);
-    const theatricalSeconds = Math.max(60, Math.min(300, Math.round(baseSeconds * weatherMultiplier)));
-    const launchAt = Date.now();
+    setSending(true);
+    setSendError(null);
 
-    setActiveFlight({
-      id: crypto.randomUUID?.() || `flight-${launchAt}`,
-      pigeonName: selected?.name || 'Pico',
-      recipientPhone,
-      messageBody: messageBody.trim(),
-      origin,
-      destination,
-      distanceMiles: routeDistance,
-      launchAt,
-      arrivalAt: launchAt + theatricalSeconds * 1000,
-      originWeather,
-      destinationWeather,
-    });
+    try {
+      // The message is sent before any theatre begins. If this fails the user
+      // is told plainly rather than being shown a ceremony for a message that
+      // never left the device.
+      const flight = await sendPigeonMessage({
+        recipientPhone,
+        body: messageBody.trim(),
+        pigeonId: selected?.id ?? null,
+        pigeonName: selected?.name || 'Pico',
+        clientNonce,
+        origin,
+        destination,
+        weatherMultiplier: weatherEtaMultiplier(originWeather, destinationWeather),
+      });
 
-    setLaunched(true);
-    setPhase('carry-scroll');
-  };
-
-  const handleCeremonyComplete = () => {
-    if (phase === 'carry-scroll') setPhase('takeoff');
-    else if (phase === 'takeoff') setPhase('flap');
+      setActiveFlight(flight);
+      setFlightWeather(flight.id, originWeather, destinationWeather);
+      setLaunched(true);
+      setPhase('carry-scroll');
+    } catch (error) {
+      setSendError(
+        error instanceof PigeonSendError
+          ? error.message
+          : 'Something went wrong and the message was not sent.',
+      );
+    } finally {
+      setSending(false);
+    }
   };
 
   useEffect(() => {
-    if (phase !== 'flap') return;
-    const timer = window.setTimeout(() => setPhase('glide'), 1400);
+    if (!launched) return;
+    const durationMs = ceremonyPhaseDuration(phase);
+    const next = nextCeremonyPhase(phase);
+    if (durationMs == null || next == null) return;
+
+    const timer = window.setTimeout(() => setPhase(next), durationMs);
     return () => window.clearTimeout(timer);
-  }, [phase]);
+  }, [launched, phase]);
 
   return (
     <div className="min-h-full flex flex-col" style={{ background: 'var(--slate-dusk)' }}>
@@ -208,6 +257,7 @@ export const SendFlow = () => {
                       <button onClick={enablePrecisionRouting} className="flex items-center justify-center gap-2 rounded-2xl border px-4 py-3 text-sm font-semibold" style={{ borderColor: 'var(--border-subtle)', color: 'var(--wheat)' }}><LocateFixed className="h-4 w-4" /> Precision Origin</button>
                     </div>
                     {weatherError && <p className="text-xs" style={{ color: 'var(--sky-ash)' }}>{weatherError}</p>}
+                    {locationError && <p className="text-xs" style={{ color: 'var(--sky-ash)' }}>{locationError}</p>}
                   </>
                 ) : (
                   <div className="rounded-2xl border p-4" style={{ background: 'var(--coop-char)', borderColor: 'var(--feather-magenta)' }}>
@@ -231,16 +281,23 @@ export const SendFlow = () => {
             </Screen>
           )}
 
-          {launched && <LaunchCeremony key="ceremony" phase={phase} pigeonName={selected?.name || 'Pico'} onActionComplete={handleCeremonyComplete} onOpenFlight={() => navigate('/flight')} />}
+          {launched && <LaunchCeremony key="ceremony" phase={phase} pigeonName={selected?.name || 'Pico'} onOpenFlight={() => navigate('/flight')} />}
         </AnimatePresence>
       </main>
 
       {!launched && (
         <footer className="p-4 pt-0">
+          {sendError && (
+            <div role="alert" className="mb-3 rounded-2xl border p-3 text-sm" style={{ background: 'var(--coop-char)', borderColor: 'var(--feather-magenta)', color: 'var(--wheat)' }}>
+              {sendError}
+            </div>
+          )}
           {step < 4 ? (
-            <button type="button" disabled={!canContinue} onClick={next} className="w-full rounded-2xl px-5 py-4 font-semibold disabled:opacity-40" style={{ background: 'var(--petrol)', color: 'var(--coop-char)' }}>Continue</button>
+            <button type="button" disabled={!canContinue} onClick={next} className="w-full rounded-2xl px-5 py-4 font-semibold disabled:cursor-not-allowed" style={{ background: canContinue ? 'var(--petrol)' : 'var(--surface-raised)', color: canContinue ? 'var(--coop-char)' : 'var(--text-secondary)' }}>Continue</button>
           ) : (
-            <button type="button" onClick={launch} className="w-full rounded-2xl px-5 py-4 font-semibold" style={{ background: 'var(--petrol)', color: 'var(--coop-char)' }}>Attach Scroll & Launch</button>
+            <button type="button" onClick={launch} disabled={sending} className="w-full rounded-2xl px-5 py-4 font-semibold disabled:cursor-not-allowed" style={{ background: sending ? 'var(--surface-raised)' : 'var(--petrol)', color: sending ? 'var(--text-secondary)' : 'var(--coop-char)' }}>
+              {sending ? 'Sending…' : 'Attach Scroll & Launch'}
+            </button>
           )}
         </footer>
       )}
@@ -248,16 +305,19 @@ export const SendFlow = () => {
   );
 };
 
-const PhoneField = ({ label, value, onChange, placeholder, valid }: { label: string; value: string; onChange: (value: string) => void; placeholder: string; valid: boolean }) => (
-  <div>
-    <label className="mb-2 block text-xs" style={{ color: 'var(--text-secondary)' }}>{label}</label>
-    <div className="flex items-center gap-3 rounded-xl border px-4 py-3" style={{ borderColor: valid ? 'var(--petrol)' : 'var(--border-subtle)', background: 'var(--surface-soft)' }}>
-      <Phone className="h-5 w-5" style={{ color: 'var(--petrol)' }} />
-      <input value={value} onChange={(event) => onChange(event.target.value)} inputMode="tel" autoComplete="tel" placeholder={placeholder} className="w-full bg-transparent text-base outline-none" style={{ color: 'var(--text-primary)' }} />
-      {valid && <Check className="h-5 w-5" style={{ color: 'var(--petrol)' }} />}
+const PhoneField = ({ label, value, onChange, placeholder, valid }: { label: string; value: string; onChange: (value: string) => void; placeholder: string; valid: boolean }) => {
+  const fieldId = useId();
+  return (
+    <div>
+      <label htmlFor={fieldId} className="mb-2 block text-xs" style={{ color: 'var(--text-secondary)' }}>{label}</label>
+      <div className="flex items-center gap-3 rounded-xl border px-4 py-3" style={{ borderColor: valid ? 'var(--petrol)' : 'var(--border-subtle)', background: 'var(--surface-soft)' }}>
+        <Phone className="h-5 w-5" style={{ color: 'var(--petrol)' }} />
+        <input id={fieldId} value={value} onChange={(event) => onChange(event.target.value)} inputMode="tel" autoComplete="tel" placeholder={placeholder} className="w-full bg-transparent text-base outline-none" style={{ color: 'var(--text-primary)' }} />
+        {valid && <Check className="h-5 w-5" style={{ color: 'var(--petrol)' }} />}
+      </div>
     </div>
-  </div>
-);
+  );
+};
 
 const Screen = ({ title, subtitle, children }: { title: string; subtitle: string; children: React.ReactNode }) => (
   <motion.section initial={{ opacity: 0, x: 18 }} animate={{ opacity: 1, x: 0 }} exit={{ opacity: 0, x: -18 }}>
@@ -284,7 +344,7 @@ const WeatherSummary = ({ title, weather, loading }: { title: string; weather: F
   <InfoCard icon={CloudSun} title={title} value={loading ? 'Checking live weather…' : weather ? `${weather.label} · ${weather.temperatureF}°F` : 'Weather unavailable'} detail={weather ? `${weather.windMph} mph wind` : 'Neutral conditions if unavailable'} />
 );
 
-const LaunchCeremony = ({ phase, pigeonName, onActionComplete, onOpenFlight }: { phase: CeremonyPhase; pigeonName: string; onActionComplete: () => void; onOpenFlight: () => void }) => {
+const LaunchCeremony = ({ phase, pigeonName, onOpenFlight }: { phase: CeremonyPhase; pigeonName: string; onOpenFlight: () => void }) => {
   const animation: PicoAnimation = phase === 'ready' ? 'idle' : phase;
   const copy = { ready: 'Ready for takeoff.', 'carry-scroll': 'Scroll secured. Checking it twice…', takeoff: 'Wings open. Leaving Coop Town…', flap: 'Across the skies!', glide: 'The journey has begun.' }[phase];
 
@@ -292,7 +352,7 @@ const LaunchCeremony = ({ phase, pigeonName, onActionComplete, onOpenFlight }: {
     <motion.section initial={{ opacity: 0 }} animate={{ opacity: 1 }} className="flex min-h-[520px] flex-col items-center justify-center text-center">
       <div className="relative flex h-72 w-full max-w-md items-center justify-center overflow-hidden rounded-[32px] border" style={{ background: 'radial-gradient(circle at 50% 80%, rgba(47,191,163,.20), transparent 28%), linear-gradient(180deg,#242a42,#151924)', borderColor: 'var(--border-subtle)' }}>
         <motion.div animate={phase === 'flap' || phase === 'glide' ? { x: [-20, 28, -8], y: [8, -22, -8] } : { y: [0, -3, 0] }} transition={{ duration: phase === 'flap' || phase === 'glide' ? 2.2 : 1.8, repeat: phase === 'flap' || phase === 'glide' ? Infinity : 0 }}>
-          <PicoSprite animation={animation} size={210} fallbackLabel={pigeonName} onComplete={onActionComplete} />
+          <PicoSprite animation={animation} size={210} fallbackLabel={pigeonName} />
         </motion.div>
       </div>
       <p className="mt-6 text-xs uppercase tracking-[0.24em]" style={{ color: 'var(--petrol)' }}>{phase.replace('-', ' ')}</p>

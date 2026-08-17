@@ -26,12 +26,38 @@ const formatRemaining = (ms: number) => {
 export const FlightView = () => {
   const navigate = useNavigate();
   const activeFlight = useFlightStore((state) => state.activeFlight);
+  const originWeather = useFlightStore((state) => state.originWeather);
+  const destinationWeather = useFlightStore((state) => state.destinationWeather);
+  const hydrated = useFlightStore((state) => state.hydrated);
+  const hydrate = useFlightStore((state) => state.hydrate);
+  const landFlight = useFlightStore((state) => state.landFlight);
   const [now, setNow] = useState(Date.now());
+  const [landed, setLanded] = useState(false);
 
   useEffect(() => {
+    if (!hydrated) hydrate();
+  }, [hydrate, hydrated]);
+
+  useEffect(() => {
+    if (!activeFlight) return;
+    // Stop ticking once the pigeon is down. The interval used to run forever,
+    // re-rendering the whole view every second on a flight that had already
+    // arrived.
+    if (now >= activeFlight.arrivalAt) return;
+
     const timer = window.setInterval(() => setNow(Date.now()), 1000);
     return () => window.clearInterval(timer);
-  }, []);
+  }, [activeFlight, now]);
+
+  useEffect(() => {
+    if (!activeFlight || landed) return;
+    if (now < activeFlight.arrivalAt) return;
+
+    // Arrival is a real boundary, not just a progress bar reaching the end:
+    // tell the server the flight is down so it stops being the active flight.
+    setLanded(true);
+    landFlight();
+  }, [activeFlight, landFlight, landed, now]);
 
   if (!activeFlight) {
     return (
@@ -99,13 +125,15 @@ export const FlightView = () => {
       </section>
 
       <section className="mt-4 grid gap-3 sm:grid-cols-2">
-        <WeatherCard title={activeFlight.origin.displayRegion} weather={activeFlight.originWeather} />
-        <WeatherCard title={activeFlight.destination.displayRegion} weather={activeFlight.destinationWeather} />
+        <WeatherCard title={activeFlight.origin.displayRegion} weather={originWeather} />
+        <WeatherCard title={activeFlight.destination.displayRegion} weather={destinationWeather} />
       </section>
 
       <section className="mt-4 rounded-2xl border p-4" style={{ background: 'var(--coop-char)', borderColor: 'var(--border-subtle)' }}>
         <p className="text-[10px] uppercase tracking-[0.18em]" style={{ color: 'var(--text-secondary)' }}>Scroll</p>
-        <p className="mt-2 leading-relaxed" style={{ color: 'var(--wheat)' }}>“{activeFlight.messageBody}”</p>
+        <p className="mt-2 leading-relaxed" style={{ color: 'var(--wheat)' }}>
+          {activeFlight.messageBody ? `“${activeFlight.messageBody}”` : 'The scroll is sealed for the journey.'}
+        </p>
       </section>
     </div>
   );

@@ -5,16 +5,35 @@ import { useNavigate } from 'react-router-dom';
 import { usePigeonStore } from '../store/pigeonStore';
 import { useConversationStore } from '../store/conversationStore';
 import { PicoSprite } from '../components/pigeon/PicoSprite';
+import { FlightRibbon } from '../components/flight/FlightRibbon';
+import { flightProgress, flightStatus, useFlightStore } from '../store/flightStore';
 
 export const OverworldHome = () => {
   const navigate = useNavigate();
   const { activePigeon, fetchParty } = usePigeonStore();
   const { conversations } = useConversationStore();
   const [picoAction, setPicoAction] = useState<'idle' | 'pet-happy' | 'eat'>('idle');
+  const activeFlight = useFlightStore((state) => state.activeFlight);
+  const hydrate = useFlightStore((state) => state.hydrate);
+  const [now, setNow] = useState(Date.now());
 
   useEffect(() => {
     fetchParty();
   }, [fetchParty]);
+
+  // Coop Town is the app's home, so it is where an in-flight pigeon should be
+  // visible. Without this the flight view was only reachable from the tail of
+  // the launch ceremony and became unreachable the moment you navigated away.
+  useEffect(() => {
+    hydrate();
+  }, [hydrate]);
+
+  useEffect(() => {
+    if (!activeFlight) return;
+    if (now >= activeFlight.arrivalAt) return;
+    const timer = window.setInterval(() => setNow(Date.now()), 1000);
+    return () => window.clearInterval(timer);
+  }, [activeFlight, now]);
 
   const unreadCount = conversations.reduce((sum, c) => sum + c.unreadCount, 0);
   const pigeonName = activePigeon?.name || 'Pico';
@@ -37,6 +56,27 @@ export const OverworldHome = () => {
       </div>
 
       <main className="flex-1 px-4 pb-4 flex flex-col gap-4">
+        {activeFlight && (
+          <motion.button
+            type="button"
+            initial={{ opacity: 0, y: -6 }}
+            animate={{ opacity: 1, y: 0 }}
+            onClick={() => navigate('/flight')}
+            className="w-full rounded-2xl border p-4 text-left"
+            style={{ background: 'var(--coop-char)', borderColor: 'var(--petrol)' }}
+          >
+            <div className="mb-2 flex items-baseline justify-between gap-3">
+              <span className="text-[10px] uppercase tracking-[0.2em]" style={{ color: 'var(--petrol)' }}>
+                {flightStatus(activeFlight) === 'arrived' ? 'Pigeon has landed' : 'Pigeon in flight'}
+              </span>
+              <span className="text-xs" style={{ color: 'var(--text-secondary)' }}>
+                {activeFlight.origin.displayRegion} → {activeFlight.destination.displayRegion}
+              </span>
+            </div>
+            <FlightRibbon progress={flightProgress(activeFlight, now)} status={flightStatus(activeFlight, now)} />
+          </motion.button>
+        )}
+
         <motion.section
           initial={{ opacity: 0, y: 8 }}
           animate={{ opacity: 1, y: 0 }}

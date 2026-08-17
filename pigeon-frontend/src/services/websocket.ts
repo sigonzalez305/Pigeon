@@ -50,8 +50,9 @@ export const subscribeToConversation = (conversationId: number) => {
   }
 
   const subscription = stompClient.subscribe(destination, (message) => {
+    // Deliberately not logged: the payload is private message content, and it
+    // was being written to the browser console in production.
     const newMessage = JSON.parse(message.body);
-    console.log('Received message:', newMessage);
     useConversationStore.getState().addMessage(newMessage);
   });
 

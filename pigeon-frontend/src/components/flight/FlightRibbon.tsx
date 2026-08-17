@@ -6,7 +6,17 @@ export const FlightRibbon = ({ progress, status }: { progress: number; status: F
   const pct = Math.round(progress * 100);
 
   return (
-    <div className="w-full" aria-label={`Flight ${status}, ${pct}% complete`}>
+    // A bare div with aria-label is not reliably announced; progressbar with
+    // explicit values exposes the flight's state to screen readers.
+    <div
+      className="w-full"
+      role="progressbar"
+      aria-label={`Flight ${status}`}
+      aria-valuenow={pct}
+      aria-valuemin={0}
+      aria-valuemax={100}
+      aria-valuetext={landed ? 'Arrived' : `${pct}% complete`}
+    >
       <div className="relative h-8">
         <svg viewBox="0 0 100 26" className="h-full w-full overflow-visible" preserveAspectRatio="none" aria-hidden="true">
           <path d="M1 22 C 30 2, 70 2, 99 22" fill="none" stroke="rgba(138,147,166,.22)" strokeWidth="1.4" />
