@@ -22,6 +22,22 @@ const CONFIG: Record<PicoAnimation | 'land', AnimationConfig> = {
 
 const RUNTIME_BASE = '/src/assets/asset-bank/production/pico-v1/runtime';
 
+// Core production strips are committed first. These aliases keep every current
+// UI state animated while the dedicated glide/land/deliver refinement strips
+// are still being art-cleaned. Replace aliases with one-to-one files when ready.
+const ASSET_ALIAS: Record<PicoAnimation | 'land', string> = {
+  idle: 'idle',
+  walk: 'idle',
+  'pet-happy': 'pet-happy',
+  eat: 'eat',
+  'carry-scroll': 'carry-scroll',
+  takeoff: 'takeoff',
+  flap: 'flap',
+  glide: 'flap',
+  land: 'takeoff',
+  deliver: 'pet-happy',
+};
+
 export type PicoSpriteProps = {
   animation?: PicoAnimation | 'land';
   size?: number;
@@ -47,7 +63,7 @@ export const PicoSprite = ({
   const [frame, setFrame] = useState(0);
   const [assetFailed, setAssetFailed] = useState(false);
   const reducedMotion = useMemo(prefersReducedMotion, []);
-  const src = `${RUNTIME_BASE}/pico-${animation}.png`;
+  const src = `${RUNTIME_BASE}/pico-${ASSET_ALIAS[animation]}.png`;
 
   useEffect(() => {
     setFrame(0);
@@ -101,12 +117,7 @@ export const PicoSprite = ({
         imageRendering: 'auto',
       }}
     >
-      <img
-        src={src}
-        alt=""
-        className="hidden"
-        onError={() => setAssetFailed(true)}
-      />
+      <img src={src} alt="" className="hidden" onError={() => setAssetFailed(true)} />
     </div>
   );
 };
