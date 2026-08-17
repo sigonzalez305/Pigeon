@@ -11,7 +11,10 @@ export const connectWebSocket = (token: string) => {
     return stompClient;
   }
 
-  const socket = new SockJS('http://localhost:8080/ws');
+  // Same-origin path rather than a hardcoded host: the dev server and the
+  // production nginx both proxy /ws, so this works in either without pointing
+  // a deployed build at the developer's own machine.
+  const socket = new SockJS('/ws');
 
   stompClient = new Client({
     webSocketFactory: () => socket as any,

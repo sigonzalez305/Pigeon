@@ -9,7 +9,7 @@ import type { AreaCodeRecord } from '../services/location';
  */
 export const AREA_CODE_CENTROIDS: readonly AreaCodeRecord[] = [
   { areaCode: '201', state: 'NJ', displayRegion: 'Hackensack, New Jersey', latitude: 40.838850, longitude: -74.045678, precisionRadiusMiles: 35 },
-  { areaCode: '202', state: 'DC', displayRegion: 'Washington, Washington, DC', latitude: 38.895110, longitude: -77.036370, precisionRadiusMiles: 18 },
+  { areaCode: '202', state: 'DC', displayRegion: 'Washington, DC', latitude: 38.895110, longitude: -77.036370, precisionRadiusMiles: 18 },
   { areaCode: '203', state: 'CT', displayRegion: 'Shelton, Connecticut', latitude: 41.291798, longitude: -73.122453, precisionRadiusMiles: 35 },
   { areaCode: '205', state: 'AL', displayRegion: 'Bessemer, Alabama', latitude: 33.427671, longitude: -86.886473, precisionRadiusMiles: 35 },
   { areaCode: '206', state: 'WA', displayRegion: 'Seattle, Washington', latitude: 47.564027, longitude: -122.348976, precisionRadiusMiles: 35 },
