@@ -1,6 +1,6 @@
 import { useEffect, useMemo, useState } from 'react';
 import { AnimatePresence, motion } from 'framer-motion';
-import { ArrowLeft, Check, CloudSun, Feather, LocateFixed, MapPin, Phone, Send } from 'lucide-react';
+import { ArrowLeft, Check, CloudSun, Feather, LocateFixed, MapPin, Phone } from 'lucide-react';
 import { useNavigate } from 'react-router-dom';
 import { usePigeonStore } from '../store/pigeonStore';
 import { useAuthStore } from '../store/authStore';
