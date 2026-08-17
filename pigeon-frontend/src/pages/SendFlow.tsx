@@ -158,7 +158,7 @@ export const SendFlow = () => {
               <div className="space-y-3 rounded-2xl border p-4" style={{ background: 'var(--coop-char)', borderColor: 'var(--border-subtle)' }}>
                 <PhoneField label="From" value={senderPhone} onChange={setSenderPhone} placeholder="(202) 555-0111" valid={senderValid} />
                 <PhoneField label="To" value={recipientPhone} onChange={setRecipientPhone} placeholder="(305) 555-0178" valid={recipientValid} />
-                <p className="text-xs leading-relaxed" style={{ color: 'var(--text-secondary)' }}>The current demo seed covers major U.S. metro area codes. The resolver is already structured for the complete NANPA dataset.</p>
+                <p className="text-xs leading-relaxed" style={{ color: 'var(--text-secondary)' }}>Active U.S. geographic area codes estimate both endpoints. These are routing hints, not precise locations; you can optionally enable precise routing for your departure point.</p>
               </div>
             </Screen>
           )}
@@ -211,8 +211,8 @@ export const SendFlow = () => {
                   </>
                 ) : (
                   <div className="rounded-2xl border p-4" style={{ background: 'var(--coop-char)', borderColor: 'var(--feather-magenta)' }}>
-                    <p className="font-semibold" style={{ color: 'var(--wheat)' }}>This demo does not have one of those area-code centroids yet.</p>
-                    <p className="mt-1 text-sm" style={{ color: 'var(--text-secondary)' }}>Use a seeded metro area code such as 202, 305, 954, 212, 213, 312, 404, 415, 617, 702 or 713 while we import the complete official NANPA dataset.</p>
+                    <p className="font-semibold" style={{ color: 'var(--wheat)' }}>We couldn’t resolve one of those area codes.</p>
+                    <p className="mt-1 text-sm" style={{ color: 'var(--text-secondary)' }}>Check that both numbers use a valid active U.S. geographic area code, then try again.</p>
                   </div>
                 )}
               </div>
