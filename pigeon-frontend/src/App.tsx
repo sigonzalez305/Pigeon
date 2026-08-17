@@ -6,6 +6,7 @@ import { OverworldHome } from './pages/OverworldHome';
 import { Inbox } from './pages/Inbox';
 import { ConversationThread } from './pages/ConversationThread';
 import { SendFlow } from './pages/SendFlow';
+import { FlightView } from './pages/FlightView';
 import { Profile } from './pages/Profile';
 import { useAuthStore } from './store/authStore';
 import { useConversationStore } from './store/conversationStore';
@@ -44,6 +45,7 @@ function App() {
           <Route path="inbox" element={<Inbox />} />
           <Route path="conversation/:conversationId" element={<ConversationThread />} />
           <Route path="send" element={<SendFlow />} />
+          <Route path="flight" element={<FlightView />} />
           <Route path="profile" element={<Profile />} />
         </Route>
       </Routes>
