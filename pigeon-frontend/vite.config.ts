@@ -24,5 +24,22 @@ export default defineConfig({
         ws: true,
       }
     }
+  },
+  // Mirrors the server proxy so `npm run preview` exercises the real production
+  // bundle against a real backend. Defects like sprite paths that resolve only
+  // under the dev server are invisible until the built output is run.
+  preview: {
+    port: 4173,
+    proxy: {
+      '/api': {
+        target: 'http://localhost:8080',
+        changeOrigin: true,
+      },
+      '/ws': {
+        target: 'http://localhost:8080',
+        changeOrigin: true,
+        ws: true,
+      }
+    }
   }
 })

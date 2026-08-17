@@ -1,6 +1,6 @@
 import { chromium } from 'playwright';
 
-const BASE = 'http://localhost:5173';
+const BASE = 'http://localhost:4173';
 const SHOTS = '/tmp/claude-0/-home-user-Pigeon/940c7a7a-3d05-57f5-995b-6d6cd8b15d2f/scratchpad/shots';
 const log = (...a) => console.log(...a);
 

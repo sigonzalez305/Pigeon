@@ -45,13 +45,16 @@ docker-compose up -d
 
 ### Demo Accounts
 
-The application comes with pre-seeded demo data:
+The demo profile seeds three accounts. Their numbers use real geographic area
+codes so routes between them resolve:
 
-- **Alice**: `+1234567890` / `password`
-- **Bob**: `+0987654321` / `password`
-- **Charlie**: `+1112223333` / `password`
+- **Alice**: `+12025550111` / `password` — Washington, DC
+- **Bob**: `+13055550178` / `password` — Miami, FL
+- **Charlie**: `+14155550142` / `password` — San Francisco, CA
 
-Login with any of these accounts to see existing conversations and pigeons.
+Log in as Alice and send a Pigeon Message to Bob's number to exercise the full
+flow. These accounts exist only under the `demo` profile, which is never the
+default.
 
 ## 🛠️ Development Setup
 
@@ -67,13 +70,23 @@ Login with any of these accounts to see existing conversations and pigeons.
 ```bash
 cd pigeon-backend
 
-# Run with Gradle (requires PostgreSQL and Redis running)
-./gradlew bootRun
+# Requires PostgreSQL and Redis. The quickest way to get both:
+#   docker compose up -d postgres redis
 
-# Or build JAR
+# Run with the demo profile (seeds test accounts, enables the daily reset,
+# and compresses flights into a 1-5 minute window so a send can be watched
+# end to end).
+SPRING_PROFILES_ACTIVE=demo ./gradlew bootRun
+
+# Or build and run the JAR
 ./gradlew build
-java -jar build/libs/*.jar
+SPRING_PROFILES_ACTIVE=demo java -jar build/libs/pigeon-messenger-1.0.0.jar
 ```
+
+Without a profile the app runs as `prod`, which seeds nothing and **requires
+`JWT_SECRET` to be set** (at least 32 characters). It refuses to start without
+one rather than falling back to a default that would be public in this
+repository.
 
 **Backend runs on**: `http://localhost:8080`
 
@@ -221,3 +234,55 @@ See LICENSE file for details.
 ---
 
 Made with ❤️ and 🕊️
+
+## ⚙️ Configuration
+
+Nothing sensitive is committed. Every value below has a local-development
+default except `JWT_SECRET`, which has none.
+
+| Variable | Default | Notes |
+|---|---|---|
+| `JWT_SECRET` | *(none)* | Required in `prod`. Minimum 32 characters; the app refuses to start without it. |
+| `DATABASE_URL` | `jdbc:postgresql://localhost:5432/pigeon` | |
+| `DATABASE_USERNAME` / `DATABASE_PASSWORD` | `postgres` / `postgres` | |
+| `REDIS_HOST` / `REDIS_PORT` | `localhost` / `6379` | |
+| `CORS_ALLOWED_ORIGINS` | `localhost:5173,4173,3000` | **Must be set to your real domain in production**, or the browser blocks every API call. |
+| `WEBSOCKET_ALLOWED_ORIGINS` | same as above | Same warning applies to the WebSocket handshake. |
+| `SPRING_PROFILES_ACTIVE` | `prod` | Set to `demo` for local development. |
+| `PIGEON_DAILY_LIMIT` | `1` | Pigeon Messages allowed per sender per day. |
+| `PIGEON_ALLOW_DAILY_RESET` | `false` | Enables the Reset Daily Pigeon developer control. On in `demo`. |
+| `PIGEON_AIRSPEED_MPH` | `55.0` | Flight duration is distance / airspeed. |
+| `PIGEON_TEST_MODE` | `false` | Compresses flights into a 1-5 minute window. On in `demo`. |
+
+## 🧪 Tests
+
+```bash
+cd pigeon-frontend && npm test        # vitest
+cd pigeon-backend  && ./gradlew test  # JUnit
+```
+
+CI runs typecheck, tests, and build for both halves on every push. It also
+asserts the frontend build emits its image assets and that no dev-server path
+reaches the bundle — the failure mode that once shipped placeholder sprites
+from a green build.
+
+## 🕊️ How a Pigeon Message works
+
+A Pigeon Message is two things, and the split matters:
+
+- **The message** is ordinary, reliable messaging. `POST /api/pigeon-messages`
+  writes it to the conversation before any animation runs. It is never
+  contingent on the flight.
+- **The flight** is theatre on top: a route, a duration derived from distance,
+  and an arrival time. It decides when the ceremony says the pigeon landed. It
+  never decides whether the message is delivered.
+
+The server owns both. The client holds no message content on disk, so a flight
+resumes on another device and survives clearing site data.
+
+| Endpoint | Purpose |
+|---|---|
+| `POST /api/pigeon-messages` | Send. Idempotent on `clientNonce`. Enforces the daily limit. |
+| `GET /api/pigeon-messages/active` | The sender's in-flight pigeon and remaining daily allowance. |
+| `POST /api/pigeon-messages/{id}/arrive` | Lands a flight whose ETA has passed. |
+| `POST /api/pigeon-messages/reset-daily` | Developer control; 403 unless explicitly enabled. |
