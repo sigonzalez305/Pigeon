@@ -1,4 +1,4 @@
-import { useEffect, useMemo, useState } from 'react';
+import { useEffect, useState } from 'react';
 import { ArrowLeft, CloudSun, MapPin, Navigation, Wind } from 'lucide-react';
 import { useNavigate } from 'react-router-dom';
 import { PicoSprite } from '../components/pigeon/PicoSprite';
