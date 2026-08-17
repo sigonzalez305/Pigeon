@@ -1,12 +1,33 @@
 import { chromium } from 'playwright';
+import { mkdirSync } from 'node:fs';
 
-const BASE = 'http://localhost:4173';
-const SHOTS = '/tmp/claude-0/-home-user-Pigeon/940c7a7a-3d05-57f5-995b-6d6cd8b15d2f/scratchpad/shots';
+/**
+ * Drives the whole Pigeon Message flow in a real browser.
+ *
+ * This exists because the defects that mattered most were invisible to
+ * typecheck, tests and build: a ceremony that deadlocked, sprites that 404'd
+ * only in a production build, and a bundle that threw before React rendered.
+ * Nothing catches those except running the app.
+ *
+ *   PIGEON_BASE_URL=http://localhost:5173 node e2e-verify.mjs   # dev server
+ *   PIGEON_BASE_URL=http://localhost:4173 node e2e-verify.mjs   # production build
+ *
+ * Requires the backend on :8080 with the demo profile, and a sender who has
+ * not yet spent today's pigeon (POST /api/pigeon-messages/reset-daily).
+ */
+const BASE = process.env.PIGEON_BASE_URL || 'http://localhost:5173';
+const SHOTS = process.env.PIGEON_SHOT_DIR || './e2e-shots';
 const log = (...a) => console.log(...a);
 
-const browser = await chromium.launch({
-  executablePath: '/opt/pw-browsers/chromium-1194/chrome-linux/chrome',
-});
+mkdirSync(SHOTS, { recursive: true });
+
+// PLAYWRIGHT_EXECUTABLE_PATH covers environments with a preinstalled browser;
+// otherwise Playwright resolves its own.
+const browser = await chromium.launch(
+  process.env.PLAYWRIGHT_EXECUTABLE_PATH
+    ? { executablePath: process.env.PLAYWRIGHT_EXECUTABLE_PATH }
+    : {},
+);
 const ctx = await browser.newContext({ viewport: { width: 420, height: 900 } });
 const page = await ctx.newPage();
 
