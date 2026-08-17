@@ -34,7 +34,7 @@ export const Login = () => {
   };
 
   return (
-    <div className="min-h-screen flex items-center justify-center p-4 bg-gradient-to-br from-dark-900 via-dark-800 to-dark-900">
+    <div className="min-h-screen flex items-center justify-center p-4" style={{ background: 'linear-gradient(135deg, var(--slate-dusk), var(--coop-char) 60%, var(--slate-dusk))' }}>
       <motion.div
         initial={{ opacity: 0, y: 20 }}
         animate={{ opacity: 1, y: 0 }}
@@ -42,8 +42,8 @@ export const Login = () => {
       >
         <div className="text-center mb-8">
           <div className="text-6xl mb-4">🕊️</div>
-          <h1 className="text-4xl font-pixel text-neon-cyan mb-2">Pigeon</h1>
-          <p className="text-gray-400">Messenger that flies</p>
+          <h1 className="text-4xl font-semibold mb-2" style={{ color: 'var(--wheat)' }}>Pigeon</h1>
+          <p style={{ color: 'var(--text-secondary)' }}>Messenger that flies</p>
         </div>
 
         <div className="panel">
@@ -58,8 +58,8 @@ export const Login = () => {
                 type="text"
                 value={phone}
                 onChange={(e) => setPhone(e.target.value)}
-                placeholder="+1234567890"
-                className="w-full bg-dark-800 border-2 border-ui-border rounded-lg px-4 py-3 text-white placeholder-gray-500 focus:border-neon-cyan focus:outline-none transition-colors"
+                placeholder="+1 202 555 0111"
+                className="field"
                 required
               />
             </div>
@@ -72,7 +72,7 @@ export const Login = () => {
                   value={displayName}
                   onChange={(e) => setDisplayName(e.target.value)}
                   placeholder="Your name"
-                  className="w-full bg-dark-800 border-2 border-ui-border rounded-lg px-4 py-3 text-white placeholder-gray-500 focus:border-neon-cyan focus:outline-none transition-colors"
+                  className="field"
                   required
                 />
               </div>
@@ -85,7 +85,7 @@ export const Login = () => {
                 value={password}
                 onChange={(e) => setPassword(e.target.value)}
                 placeholder="••••••••"
-                className="w-full bg-dark-800 border-2 border-ui-border rounded-lg px-4 py-3 text-white placeholder-gray-500 focus:border-neon-cyan focus:outline-none transition-colors"
+                className="field"
                 required
               />
             </div>
@@ -111,7 +111,7 @@ export const Login = () => {
                 setIsRegister(!isRegister);
                 setError('');
               }}
-              className="text-sm text-neon-cyan hover:underline"
+              className="text-sm hover:underline" style={{ color: 'var(--petrol)' }}
             >
               {isRegister
                 ? 'Already have an account? Login'
@@ -120,11 +120,13 @@ export const Login = () => {
           </div>
 
           {!isRegister && (
-            <div className="mt-6 p-4 bg-dark-800 rounded-lg text-sm">
-              <p className="text-gray-400 mb-2">Demo accounts:</p>
-              <code className="text-xs text-neon-cyan">+1234567890 / password</code>
+            <div className="mt-6 p-4 rounded-lg text-sm" style={{ background: 'var(--surface-soft)', border: '1px solid var(--border-subtle)' }}>
+              <p className="mb-2" style={{ color: 'var(--text-secondary)' }}>Demo accounts:</p>
+              <code className="text-xs" style={{ color: 'var(--petrol)' }}>+12025550111 / password</code>
               <br />
-              <code className="text-xs text-neon-cyan">+0987654321 / password</code>
+              <code className="text-xs" style={{ color: 'var(--petrol)' }}>+13055550178 / password</code>
+              <br />
+              <code className="text-xs" style={{ color: 'var(--petrol)' }}>+14155550142 / password</code>
             </div>
           )}
         </div>

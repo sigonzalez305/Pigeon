@@ -13,13 +13,13 @@ export const Inbox = () => {
 
   return (
     <div className="h-full flex flex-col">
-      <header className="p-4 border-b-2 border-ui-border">
-        <h1 className="text-2xl font-bold text-neon-cyan">Inbox</h1>
+      <header className="p-4 border-b-2 border-[var(--border-subtle)]">
+        <h1 className="text-2xl font-bold text-[var(--petrol)]">Inbox</h1>
       </header>
 
       <div className="flex-1 overflow-y-auto">
         {conversations.length === 0 ? (
-          <div className="flex items-center justify-center h-full text-gray-400">
+          <div className="flex items-center justify-center h-full text-[var(--text-secondary)]">
             <div className="text-center">
               <div className="text-6xl mb-4">📭</div>
               <p>No conversations yet</p>
@@ -54,29 +54,29 @@ const ConversationItem = ({ conversation, onClick }: any) => {
   return (
     <button
       onClick={onClick}
-      className="w-full p-4 flex items-center gap-4 border-b border-ui-border hover:bg-ui-panel transition-colors"
+      className="w-full p-4 flex items-center gap-4 border-b border-[var(--border-subtle)] hover:bg-[var(--surface-raised)] transition-colors"
     >
       {/* Avatar */}
-      <div className="w-12 h-12 rounded-full bg-gradient-to-br from-neon-cyan to-neon-pink flex items-center justify-center text-xl font-bold">
+      <div className="w-12 h-12 rounded-full bg-gradient-to-br from-[var(--petrol)] to-[var(--feather-magenta)] flex items-center justify-center text-xl font-bold">
         {otherUserId?.toString()[0] || 'U'}
       </div>
 
       {/* Content */}
       <div className="flex-1 text-left">
         <div className="flex justify-between items-start mb-1">
-          <h3 className="font-semibold text-white">User #{otherUserId}</h3>
-          <span className="text-xs text-gray-400">
+          <h3 className="font-semibold text-[var(--text-primary)]">User #{otherUserId}</h3>
+          <span className="text-xs text-[var(--text-secondary)]">
             {lastMessage && new Date(lastMessage.createdAt).toLocaleTimeString()}
           </span>
         </div>
-        <p className={`text-sm ${hasUnread ? 'text-white font-medium' : 'text-gray-400'}`}>
+        <p className={`text-sm ${hasUnread ? 'text-[var(--text-primary)] font-medium' : 'text-[var(--text-secondary)]'}`}>
           {lastMessage?.body || 'No messages yet'}
         </p>
       </div>
 
       {/* Unread badge */}
       {hasUnread && (
-        <div className="w-6 h-6 rounded-full bg-neon-cyan text-dark-900 text-xs font-bold flex items-center justify-center">
+        <div className="w-6 h-6 rounded-full bg-[var(--petrol)] text-[var(--coop-char)] text-xs font-bold flex items-center justify-center">
           {conversation.unreadCount}
         </div>
       )}

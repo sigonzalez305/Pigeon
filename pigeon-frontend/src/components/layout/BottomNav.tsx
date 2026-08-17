@@ -12,7 +12,7 @@ export const BottomNav = () => {
   ];
 
   return (
-    <nav className="bg-dark-800 border-t-2 border-ui-border">
+    <nav style={{ background: 'var(--coop-char)', borderTop: '1px solid var(--border-subtle)' }}>
       <div className="flex justify-around py-3">
         {links.map(({ to, icon: Icon, label }) => {
           const isActive = location.pathname === to;
@@ -20,11 +20,9 @@ export const BottomNav = () => {
             <Link
               key={to}
               to={to}
-              className={`flex flex-col items-center gap-1 px-4 py-2 rounded-lg transition-all ${
-                isActive
-                  ? 'text-neon-cyan shadow-neon'
-                  : 'text-gray-400 hover:text-white'
-              }`}
+              aria-current={isActive ? 'page' : undefined}
+              className="flex flex-col items-center gap-1 px-4 py-2 rounded-lg transition-colors"
+              style={{ color: isActive ? 'var(--petrol)' : 'var(--text-secondary)' }}
             >
               <Icon className="w-6 h-6" />
               <span className="text-xs font-medium">{label}</span>

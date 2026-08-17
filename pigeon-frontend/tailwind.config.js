@@ -1,37 +1,43 @@
 /** @type {import('tailwindcss').Config} */
+
+// Dusk Aviary is the design system. The previous neon/dark/ui palettes are gone
+// rather than merely unused, so a stray `bg-dark-900` or `text-neon-cyan` fails
+// loudly instead of quietly reintroducing the old look on one screen.
 export default {
   content: ['./index.html', './src/**/*.{js,ts,jsx,tsx}'],
   theme: {
     extend: {
       colors: {
-        dark: {
-          900: '#0a0a0f',
-          800: '#131318',
-          700: '#1a1a24',
+        'slate-dusk': '#1B1F2A',
+        'coop-char': '#12151D',
+        petrol: '#2FBFA3',
+        'feather-magenta': '#E0509A',
+        wheat: '#E8D9B5',
+        'sky-ash': '#8A93A6',
+        surface: {
+          raised: '#202633',
+          soft: '#171B25',
         },
-        neon: {
-          cyan: '#00f0ff',
-          pink: '#ff00ff',
-          yellow: '#ffff00',
+        text: {
+          primary: '#F4F1E8',
+          secondary: '#8A93A6',
         },
-        ui: {
-          panel: '#2a2a3a',
-          border: '#3a3a4a',
-          glow: '#00f0ff33',
-        }
+      },
+      borderColor: {
+        subtle: 'rgba(138, 147, 166, 0.24)',
       },
       fontFamily: {
+        // Pixel treatment belongs to the game/system voice, not every heading.
         pixel: ['"Press Start 2P"', 'monospace'],
         sans: ['Inter', 'system-ui', 'sans-serif'],
       },
       boxShadow: {
-        'neon': '0 0 10px rgba(0, 240, 255, 0.5)',
-        'glow': '0 0 20px rgba(0, 240, 255, 0.3)',
+        lift: '0 10px 30px rgba(0, 0, 0, 0.35)',
+        petrol: '0 0 16px rgba(47, 191, 163, 0.28)',
       },
       animation: {
         'slide-in': 'slideIn 0.3s ease-out',
         'bounce-subtle': 'bounceSubtle 0.5s ease-out',
-        'glow-pulse': 'glowPulse 2s ease-in-out infinite',
       },
       keyframes: {
         slideIn: {
@@ -41,10 +47,6 @@ export default {
         bounceSubtle: {
           '0%, 100%': { transform: 'scale(1)' },
           '50%': { transform: 'scale(1.05)' },
-        },
-        glowPulse: {
-          '0%, 100%': { opacity: '0.5' },
-          '50%': { opacity: '1' },
         },
       },
     },
