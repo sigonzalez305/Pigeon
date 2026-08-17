@@ -11,35 +11,9 @@ import { AREA_CODE_CENTROIDS } from '../data/areaCodeCentroids';
 import { distanceMiles, requestPreciseLocation, resolveAreaCodeLocation, type RouteLocation } from '../services/location';
 import { fetchFlightWeather, weatherEtaMultiplier, type FlightWeather } from '../services/weather';
 import { PigeonSendError, sendPigeonMessage } from '../services/pigeonMessages';
+import { ceremonyPhaseDuration, nextCeremonyPhase, type CeremonyPhase } from './ceremonySequence';
 
 const STEPS = ['Recipient', 'Pigeon', 'Scroll', 'Skies', 'Launch'] as const;
-type CeremonyPhase = 'ready' | 'carry-scroll' | 'takeoff' | 'flap' | 'glide';
-
-/**
- * The launch ceremony runs on its own clock.
- *
- * It previously advanced when PicoSprite reported an animation had finished,
- * but the first phase uses a looping strip, and a loop has no completion by
- * definition — so the ceremony froze on its opening frame and never offered the
- * exit. Explicit durations make the sequence terminate whatever the sprites do.
- */
-const CEREMONY_SEQUENCE: ReadonlyArray<{ phase: CeremonyPhase; durationMs: number }> = [
-  { phase: 'carry-scroll', durationMs: 2200 },
-  { phase: 'takeoff', durationMs: 1400 },
-  { phase: 'flap', durationMs: 1800 },
-];
-
-/** Terminal phase: the pigeon is away and the flight view is offered. */
-const FINAL_PHASE: CeremonyPhase = 'glide';
-
-export const nextCeremonyPhase = (phase: CeremonyPhase): CeremonyPhase | null => {
-  const index = CEREMONY_SEQUENCE.findIndex((step) => step.phase === phase);
-  if (index === -1) return null;
-  return CEREMONY_SEQUENCE[index + 1]?.phase ?? FINAL_PHASE;
-};
-
-export const ceremonyPhaseDuration = (phase: CeremonyPhase): number | null =>
-  CEREMONY_SEQUENCE.find((step) => step.phase === phase)?.durationMs ?? null;
 
 export const SendFlow = () => {
   const navigate = useNavigate();
