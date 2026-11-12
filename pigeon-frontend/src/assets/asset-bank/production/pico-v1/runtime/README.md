@@ -1,15 +1,11 @@
 # Pico runtime strips
 
-Normalized runtime strips live here. Each strip is 8 frames, 256x256 per frame, 2048x256 total, transparent PNG.
+Each strip is 8 frames, 256x256 per frame, 2048x256 total, transparent PNG.
 
-Required strips:
-- pico-idle.png
-- pico-walk.png
-- pico-pet-happy.png
-- pico-eat.png
-- pico-carry-scroll.png
-- pico-takeoff.png
-- pico-flap.png
-- pico-glide.png
-- pico-land.png
-- pico-deliver.png
+These files are generated. Do not edit them by hand: change
+`pigeon-frontend/tools/build_pico_strips.py` and re-run it.
+
+    python3 tools/build_pico_strips.py
+
+To replace a strip with hand-drawn art, save it here under the same filename
+and remove its entry from `STRIPS` in the script so it is not overwritten.

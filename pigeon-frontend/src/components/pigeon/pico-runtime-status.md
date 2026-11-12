@@ -2,53 +2,43 @@
 
 ## Runtime contract
 
-Each animation is a horizontal strip of 8 frames. The intended cell size is
-256x256, giving a 2048x256 strip.
+Each animation is a horizontal strip of 8 frames, 256x256 per frame, 2048x256
+total, transparent PNG. All ten strips meet it.
 
-**Two strips do not currently meet that contract:**
+## Where the strips come from
 
-| Strip | Actual | Contract |
-|---|---|---|
-| `pico-flap.png` | 512 x 64 | 2048 x 256 |
-| `pico-pet-happy.png` | 512 x 64 | 2048 x 256 |
+Every strip is built by `tools/build_pico_strips.py` from one image: the
+Character Design Sheet (`design/reference-sheets/`). That sheet is the only
+place the default grey "Blue Bar" Pico is drawn in every pose, so cutting all
+ten animations from it is what makes Pico one bird.
 
-Both are 64px cells — a quarter of the intended resolution. The 8:1 aspect
-ratio still slices correctly, so nothing breaks functionally, but these two are
-upscaled hard at their display sizes: `flap` renders at 86px on the flight map
-and 210px in the launch ceremony, and `pet-happy` at 180px on the home screen.
-These are the two most-seen states in the app, so they are the worst two to be
-short. `PicoSprite` renders nearest-neighbour rather than smoothed, which keeps
-the upscale crisp instead of blurry, but resolution cannot be recovered by
-rendering — both strips need re-exporting at 2048x256 from source.
+Before this, the strips were three different birds (grey pixel, white cartoon,
+painted), five of them were truncated on upload and did not decode, and `walk`
+did not exist.
+
+The sheet has 18 poses, not 80 frames. Each strip is assembled from two to five
+of those poses plus small position offsets. That reads as animation at sprite
+size, but it is not hand-drawn in-betweening.
 
 ## Done
 
-- Animation timing and loop map for idle, walk, pet, eat, carry, takeoff, flap,
-  glide, land, and deliver.
-- `PicoSprite` React component with frame playback and completion callbacks.
-- Reduced-motion behaviour: the frame loop does not run, and `onComplete` still
-  fires on the animation's nominal duration so callers that sequence steps are
-  not stranded.
-- Strips are imported through Vite rather than referenced by a literal dev-server
-  path, so they are fingerprinted and emitted by the production build. The
-  earlier literal path 404'd in every build while the build still passed.
-- Runtime asset path isolated from the master-sheet/source atlas so presentation
-  art is never accidentally shipped as a sprite.
-- `carry-scroll -> takeoff -> flap -> glide` is sequenced by the launch ceremony
-  and verified end to end in a browser.
+- All ten strips: idle, walk, pet-happy, eat, carry-scroll, takeoff, flap,
+  glide, land, deliver.
+- `PicoSprite` plays them, honours reduced motion, and can face Pico right
+  (`flip`), which the flight map uses for eastbound routes.
+- `land -> deliver` plays on arrival in the flight view.
+- The unused atlas and its manifest are gone; strips are the single source.
 
-## Known gaps
+## Known limits
 
-- `walk` is still a deliberate alias to `idle`; it is the only remaining alias.
-- The atlas and manifest in `assets/picoRuntime.ts` are built but unused —
-  `PicoSprite` loads individual strips. Either point the renderer at the atlas
-  or retire it; right now it reads as live infrastructure and is not.
-- `land` has a strip and a config entry but no call site: nothing sequences a
-  landing yet.
+- Frame count per pose is low. `glide` is one pose with a bob; `carry-scroll`
+  is one pose with a bob.
+- `pet-happy` and `deliver` use the sheet's "celebrate" pose, which is drawn
+  slightly darker than the others.
+- `walk` has a strip but no call site: Pico does not walk around Coop Town yet.
 
 ## Next
 
-1. Re-export `flap` and `pet-happy` at 2048x256.
-2. Sequence `land -> deliver` on arrival, which is where `land` earns its strip.
-3. Decide the atlas question above before any PixiJS renderer work, so the
-   renderer is written against whichever source of truth survives.
+1. Hand-drawn or regenerated strips with true in-between frames. They drop in
+   by filename; no code changes.
+2. Give `walk` a job: Pico moving between rooftop objects.

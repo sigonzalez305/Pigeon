@@ -22,8 +22,6 @@ export const picoStrips: Record<string, string> = Object.fromEntries(
 );
 
 export const picoRuntime = {
-  atlas: new URL('./asset-bank/production/pico-v1/pico-runtime-atlas-v1.webp', import.meta.url).href,
-  manifest: new URL('./asset-bank/production/pico-v1/pico-runtime-atlas-v1.json', import.meta.url).href,
   animations: [
     'idle',
     'walk',
