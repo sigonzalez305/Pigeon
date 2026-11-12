@@ -1,17 +1,25 @@
 import SockJS from 'sockjs-client';
 import { Client, StompSubscription } from '@stomp/stompjs';
 import { useConversationStore } from '../store/conversationStore';
+import { DEMO_MODE } from '../config';
 
 let stompClient: Client | null = null;
 let subscriptions: Map<string, StompSubscription> = new Map();
 
 export const connectWebSocket = (token: string) => {
+  // Demo mode has no server to connect to; the demo backend pushes its own
+  // status updates and replies straight into the store.
+  if (DEMO_MODE) return null;
+
   if (stompClient?.active) {
     console.log('WebSocket already connected');
     return stompClient;
   }
 
-  const socket = new SockJS('http://localhost:8080/ws');
+  // Same-origin path rather than a hardcoded host: the dev server and the
+  // production nginx both proxy /ws, so this works in either without pointing
+  // a deployed build at the developer's own machine.
+  const socket = new SockJS('/ws');
 
   stompClient = new Client({
     webSocketFactory: () => socket as any,
@@ -37,6 +45,8 @@ export const connectWebSocket = (token: string) => {
 };
 
 export const subscribeToConversation = (conversationId: number) => {
+  if (DEMO_MODE) return;
+
   if (!stompClient?.active) {
     console.error('WebSocket not connected');
     return;
@@ -50,8 +60,9 @@ export const subscribeToConversation = (conversationId: number) => {
   }
 
   const subscription = stompClient.subscribe(destination, (message) => {
+    // Deliberately not logged: the payload is private message content, and it
+    // was being written to the browser console in production.
     const newMessage = JSON.parse(message.body);
-    console.log('Received message:', newMessage);
     useConversationStore.getState().addMessage(newMessage);
   });
 

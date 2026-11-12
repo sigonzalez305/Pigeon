@@ -3,13 +3,14 @@ import { useParams, useNavigate } from 'react-router-dom';
 import { useConversationStore } from '../store/conversationStore';
 import { useAuthStore } from '../store/authStore';
 import { motion, AnimatePresence } from 'framer-motion';
-import { Send, ArrowLeft } from 'lucide-react';
+import { BackIcon, ReceiptIcon, SendIcon, type ReceiptStatus } from '../components/icons/DuskIcons';
 import { subscribeToConversation } from '../services/websocket';
 
 export const ConversationThread = () => {
   const { conversationId } = useParams<{ conversationId: string }>();
   const navigate = useNavigate();
-  const { messages, fetchMessages, sendMessage } = useConversationStore();
+  const { messages, conversations, fetchMessages, fetchConversations, sendMessage } = useConversationStore();
+  const title = conversations.find((c) => c.id === Number(conversationId))?.title || 'Conversation';
   const { user } = useAuthStore();
   const [inputValue, setInputValue] = useState('');
   const messagesEndRef = useRef<HTMLDivElement>(null);
@@ -19,12 +20,13 @@ export const ConversationThread = () => {
   useEffect(() => {
     if (conversationId) {
       fetchMessages(Number(conversationId));
+      if (conversations.length === 0) fetchConversations();
       subscribeToConversation(Number(conversationId));
     }
   }, [conversationId]);
 
   useEffect(() => {
-    messagesEndRef.current?.scrollIntoView({ behavior: 'smooth' });
+    messagesEndRef.current?.scrollIntoView({ behavior: 'smooth', block: 'nearest', inline: 'nearest' });
   }, [conversationMessages]);
 
   const handleSend = async () => {
@@ -42,21 +44,23 @@ export const ConversationThread = () => {
   return (
     <div className="h-full flex flex-col">
       {/* Header */}
-      <header className="p-4 border-b-2 border-ui-border flex items-center gap-3 bg-dark-800">
+      <header className="p-4 border-b-2 border-[var(--border-subtle)] flex items-center gap-3 bg-[var(--surface-soft)]">
         <button
           onClick={() => navigate('/inbox')}
-          className="p-2 hover:bg-ui-panel rounded-lg transition-colors"
+          aria-label="Back to messages"
+          className="flex h-11 w-11 items-center justify-center hover:bg-[var(--surface-raised)] rounded-lg transition-colors"
+          style={{ color: 'var(--wheat)' }}
         >
-          <ArrowLeft className="w-6 h-6" />
+          <BackIcon />
         </button>
-        <div className="w-10 h-10 rounded-full bg-gradient-to-br from-neon-cyan to-neon-pink" />
-        <h2 className="font-semibold text-lg">Conversation</h2>
+        <div className="w-10 h-10 rounded-full flex items-center justify-center font-semibold" style={{ background: 'var(--surface-raised)', color: 'var(--wheat)', border: '1px solid var(--border-subtle)' }}>{title[0]}</div>
+        <h2 className="font-semibold text-lg">{title}</h2>
       </header>
 
       {/* Messages */}
-      <div className="flex-1 overflow-y-auto p-4 space-y-4">
+      <div className="min-h-0 flex-1 overflow-y-auto overflow-x-hidden p-4 space-y-4">
         {conversationMessages.length === 0 ? (
-          <div className="flex items-center justify-center h-full text-gray-400">
+          <div className="flex items-center justify-center h-full text-[var(--text-secondary)]">
             <p>No messages yet. Start the conversation!</p>
           </div>
         ) : (
@@ -70,22 +74,23 @@ export const ConversationThread = () => {
       </div>
 
       {/* Composer */}
-      <div className="p-4 border-t-2 border-ui-border bg-dark-800">
+      <div className="p-4 border-t-2 border-[var(--border-subtle)] bg-[var(--surface-soft)]">
         <div className="flex gap-2">
           <input
             type="text"
             value={inputValue}
             onChange={(e) => setInputValue(e.target.value)}
-            onKeyPress={(e) => e.key === 'Enter' && handleSend()}
-            placeholder="Write a scroll..."
-            className="flex-1 bg-ui-panel border-2 border-ui-border rounded-xl px-4 py-3 text-white placeholder-gray-500 focus:border-neon-cyan focus:outline-none transition-colors"
+            onKeyDown={(e) => e.key === 'Enter' && handleSend()}
+            placeholder="Write a message…"
+            aria-label="Message"
+            className="min-w-0 flex-1 bg-[var(--surface-raised)] border-2 border-[var(--border-subtle)] rounded-xl px-4 py-3 text-[var(--text-primary)] placeholder:text-[var(--text-secondary)] focus:border-[var(--petrol)] focus:outline-none transition-colors"
           />
           <button
             onClick={handleSend}
             disabled={!inputValue.trim()}
-            className="btn-primary flex items-center gap-2"
+            className="btn-primary flex shrink-0 items-center gap-2 px-4"
           >
-            <Send className="w-5 h-5" />
+            <SendIcon size={18} />
             Send
           </button>
         </div>
@@ -105,13 +110,13 @@ const MessageBubble = ({ message, isOwn }: any) => {
       <div
         className={`max-w-[70%] rounded-2xl px-4 py-3 ${
           isOwn
-            ? 'bg-neon-cyan text-dark-900'
-            : 'bg-ui-panel border border-ui-border text-white'
+            ? 'bg-[var(--petrol)] text-[var(--coop-char)]'
+            : 'bg-[var(--surface-raised)] border border-[var(--border-subtle)] text-[var(--text-primary)]'
         }`}
       >
         <p className="text-sm">{message.body}</p>
         <div className="flex items-center gap-2 mt-1 text-xs opacity-70">
-          <span>{new Date(message.createdAt).toLocaleTimeString()}</span>
+          <span>{new Date(message.createdAt).toLocaleTimeString([], { hour: 'numeric', minute: '2-digit' })}</span>
           {isOwn && <StatusIndicator status={message.status} />}
         </div>
       </div>
@@ -120,12 +125,8 @@ const MessageBubble = ({ message, isOwn }: any) => {
 };
 
 const StatusIndicator = ({ status }: { status: string }) => {
-  const icons: Record<string, string> = {
-    sending: '⏳',
-    sent: '✓',
-    delivered: '✓✓',
-    read: '👁️',
-  };
-
-  return <span>{icons[status] || '?'}</span>;
+  const known: ReceiptStatus = (['sending', 'sent', 'delivered', 'read'] as const).includes(status as ReceiptStatus)
+    ? (status as ReceiptStatus)
+    : 'sent';
+  return <ReceiptIcon status={known} />;
 };

@@ -12,6 +12,9 @@ dist
 dist-ssr
 *.local
 
+# Screenshots from e2e-verify.mjs
+e2e-shots
+
 # Editor directories and files
 .vscode/*
 !.vscode/extensions.json

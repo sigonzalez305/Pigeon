@@ -1,0 +1,70 @@
+:root {
+  --slate-dusk: #1B1F2A;
+  --coop-char: #12151D;
+  --petrol: #2FBFA3;
+  --feather-magenta: #E0509A;
+  --wheat: #E8D9B5;
+  --sky-ash: #8A93A6;
+
+  --surface-raised: #202633;
+  --surface-soft: #171B25;
+  --border-subtle: rgba(138, 147, 166, 0.24);
+  --text-primary: #F4F1E8;
+  --text-secondary: var(--sky-ash);
+
+  --radius-sm: 8px;
+  --radius-md: 14px;
+  --radius-lg: 22px;
+
+  --space-1: 4px;
+  --space-2: 8px;
+  --space-3: 12px;
+  --space-4: 16px;
+  --space-5: 24px;
+  --space-6: 32px;
+
+  --motion-fast: 120ms;
+  --motion-normal: 220ms;
+  --motion-world: 420ms;
+}
+
+html,
+body,
+#root {
+  min-height: 100%;
+  background: var(--slate-dusk);
+  color: var(--text-primary);
+}
+
+/* Semantic status vocabulary: petrol = moving/actionable, magenta = landed/completed. */
+.status-in-flight,
+.action-primary {
+  color: var(--petrol);
+}
+
+.status-delivered,
+.status-read,
+.status-unread-emphasis {
+  color: var(--feather-magenta);
+}
+
+.scroll-surface {
+  background: var(--wheat);
+  color: var(--coop-char);
+}
+
+:focus-visible {
+  outline: 2px solid var(--petrol);
+  outline-offset: 3px;
+}
+
+@media (prefers-reduced-motion: reduce) {
+  *,
+  *::before,
+  *::after {
+    animation-duration: 0.01ms !important;
+    animation-iteration-count: 1 !important;
+    scroll-behavior: auto !important;
+    transition-duration: 0.01ms !important;
+  }
+}

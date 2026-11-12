@@ -14,6 +14,8 @@ export interface Message {
 export interface Conversation {
   id: number;
   participantIds: number[];
+  /** The other person's name, when the server provides it. */
+  title?: string;
   lastMessage?: Message;
   unreadCount: number;
   updatedAt: string;
@@ -30,7 +32,7 @@ interface ConversationState {
   addMessage: (message: Message) => void;
 }
 
-export const useConversationStore = create<ConversationState>((set, get) => ({
+export const useConversationStore = create<ConversationState>((set) => ({
   conversations: [],
   messages: {},
 
@@ -41,9 +43,20 @@ export const useConversationStore = create<ConversationState>((set, get) => ({
 
   fetchMessages: async (conversationId) => {
     const response = await axios.get(`/api/conversations/${conversationId}/messages`);
-    set(state => ({
-      messages: { ...state.messages, [conversationId]: response.data }
-    }));
+    const fromServer: Message[] = response.data;
+    set(state => {
+      // A message sent while this fetch was in flight is not in the response,
+      // whether or not its own request has finished. Replacing the list
+      // outright dropped it from the screen, so the user watched their message
+      // vanish. Anything sent from this device that the response does not yet
+      // know about is kept.
+      const stillSending = (state.messages[conversationId] || []).filter(
+        local =>
+          Boolean(local.clientNonce) &&
+          !fromServer.some(m => m.id === local.id || (m.clientNonce && m.clientNonce === local.clientNonce))
+      );
+      return { messages: { ...state.messages, [conversationId]: [...fromServer, ...stillSending] } };
+    });
   },
 
   sendMessage: async (conversationId, body, clientNonce) => {
@@ -71,15 +84,18 @@ export const useConversationStore = create<ConversationState>((set, get) => ({
         clientNonce,
       });
 
-      // Replace optimistic message with server message
-      set(state => ({
-        messages: {
-          ...state.messages,
-          [conversationId]: state.messages[conversationId].map(m =>
-            m.clientNonce === clientNonce ? response.data : m
-          )
-        }
-      }));
+      // Replace the optimistic message with the server's. If a refetch already
+      // delivered the server copy, drop the optimistic one instead of doubling it.
+      set(state => {
+        const current = state.messages[conversationId] || [];
+        const alreadyThere = current.some(m => m.id === response.data.id);
+        const next = alreadyThere
+          ? current.filter(m => !(m.clientNonce === clientNonce && m.status === 'sending'))
+          : current.some(m => m.clientNonce === clientNonce)
+            ? current.map(m => (m.clientNonce === clientNonce ? response.data : m))
+            : [...current, response.data];
+        return { messages: { ...state.messages, [conversationId]: next } };
+      });
     } catch (error) {
       // Remove failed message
       set(state => ({
@@ -107,14 +123,11 @@ export const useConversationStore = create<ConversationState>((set, get) => ({
   },
 
   addMessage: (message) => {
-    set(state => ({
-      messages: {
-        ...state.messages,
-        [message.conversationId]: [
-          ...(state.messages[message.conversationId] || []),
-          message
-        ]
-      }
-    }));
+    set(state => {
+      const current = state.messages[message.conversationId] || [];
+      // The sender also receives their own message over the socket.
+      if (current.some(m => m.id === message.id)) return state;
+      return { messages: { ...state.messages, [message.conversationId]: [...current, message] } };
+    });
   },
 }));

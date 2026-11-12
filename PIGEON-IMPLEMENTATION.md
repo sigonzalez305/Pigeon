@@ -1,3 +1,19 @@
+> **⚠️ Superseded — historical reference only.**
+>
+> This document describes the original vanilla-JS prototype (`pigeon-app.js`,
+> `app.js`, `v2.js` and companions at the repository root). That prototype is
+> not the shipping app and is no longer maintained.
+>
+> The current application is `pigeon-frontend/` (React + TypeScript) and
+> `pigeon-backend/` (Spring Boot). For current architecture and product rules
+> see **`docs/PIGEON-V2-PRODUCT-DESIGN.md`** and the root `README.md`.
+>
+> Note in particular that the "no random elements" principle below applies to
+> the prototype's state machine. The current app derives flight duration from
+> route distance rather than randomly, which serves the same intent — flights
+> are reproducible for a given route — but the rule as written here does not
+> describe the shipping code.
+
 # PIGEON - Implementation Documentation
 
 ## Overview

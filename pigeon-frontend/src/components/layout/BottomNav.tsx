@@ -1,33 +1,32 @@
 import { Link, useLocation } from 'react-router-dom';
-import { Home, Inbox, Send, User } from 'lucide-react';
+import { User } from 'lucide-react';
+import { CoopIcon, MessagesIcon, SendIcon } from '../icons/DuskIcons';
 
 export const BottomNav = () => {
   const location = useLocation();
 
   const links = [
-    { to: '/home', icon: Home, label: 'Home' },
-    { to: '/inbox', icon: Inbox, label: 'Inbox' },
-    { to: '/send', icon: Send, label: 'Send' },
+    { to: '/home', icon: CoopIcon, label: 'Coop' },
+    { to: '/inbox', icon: MessagesIcon, label: 'Messages' },
+    { to: '/send', icon: SendIcon, label: 'Send' },
     { to: '/profile', icon: User, label: 'Profile' },
   ];
 
   return (
-    <nav className="bg-dark-800 border-t-2 border-ui-border">
-      <div className="flex justify-around py-3">
+    <nav aria-label="Primary" style={{ background: 'var(--coop-char)', borderTop: '1px solid var(--border-subtle)' }}>
+      <div className="mx-auto flex max-w-md justify-around py-2">
         {links.map(({ to, icon: Icon, label }) => {
-          const isActive = location.pathname === to;
+          const isActive = location.pathname === to || (to === '/inbox' && location.pathname.startsWith('/conversation'));
           return (
             <Link
               key={to}
               to={to}
-              className={`flex flex-col items-center gap-1 px-4 py-2 rounded-lg transition-all ${
-                isActive
-                  ? 'text-neon-cyan shadow-neon'
-                  : 'text-gray-400 hover:text-white'
-              }`}
+              aria-current={isActive ? 'page' : undefined}
+              className="flex min-h-[48px] min-w-[64px] flex-col items-center justify-center gap-1 rounded-lg px-3 transition-colors"
+              style={{ color: isActive ? 'var(--petrol)' : 'var(--text-secondary)' }}
             >
-              <Icon className="w-6 h-6" />
-              <span className="text-xs font-medium">{label}</span>
+              <Icon size={22} strokeWidth={1.65} />
+              <span className="text-[11px] font-medium">{label}</span>
             </Link>
           );
         })}

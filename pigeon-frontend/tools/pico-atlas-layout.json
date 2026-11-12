@@ -1,0 +1,27 @@
+{
+  "source": "src/assets/asset-bank/production/pico-v1/pico-runtime-atlas-v1.webp",
+  "output": "src/assets/asset-bank/production/pico-v1/runtime",
+  "frameSize": 256,
+  "animations": {
+    "idle": { "frames": 8, "fps": 6, "loop": true },
+    "walk": { "frames": 8, "fps": 9, "loop": true },
+    "pet-happy": { "frames": 8, "fps": 8, "loop": false },
+    "eat": { "frames": 8, "fps": 8, "loop": false },
+    "carry-scroll": { "frames": 8, "fps": 8, "loop": true },
+    "takeoff": { "frames": 8, "fps": 12, "loop": false },
+    "flap": { "frames": 8, "fps": 12, "loop": true },
+    "glide": { "frames": 8, "fps": 8, "loop": true },
+    "land": { "frames": 8, "fps": 10, "loop": false },
+    "deliver": { "frames": 8, "fps": 8, "loop": false }
+  },
+  "contract": {
+    "sheetWidth": 2048,
+    "sheetHeight": 256,
+    "transparent": true,
+    "cellWidth": 256,
+    "cellHeight": 256,
+    "anchorX": 0.5,
+    "anchorY": 0.9
+  },
+  "note": "Production runtime sheets must be normalized to 8 equal 256x256 transparent cells. The source atlas remains art direction; this file defines the runtime contract."
+}
