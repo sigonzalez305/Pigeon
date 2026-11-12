@@ -9,7 +9,9 @@
     "preview": "vite preview",
     "test": "vitest run",
     "test:watch": "vitest",
-    "typecheck": "tsc --noEmit"
+    "typecheck": "tsc --noEmit",
+    "build:demo": "tsc && VITE_DEMO=true vite build --base=./ --outDir ../app --emptyOutDir",
+    "dev:demo": "VITE_DEMO=true vite"
   },
   "dependencies": {
     "@stomp/stompjs": "^7.0.0",

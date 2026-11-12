@@ -1,10 +1,11 @@
 import { motion } from 'framer-motion';
 import { useEffect, useState } from 'react';
-import { Mail, Send, Home, Heart, Cookie } from 'lucide-react';
+import { Heart, Cookie } from 'lucide-react';
 import { useNavigate } from 'react-router-dom';
 import { usePigeonStore } from '../store/pigeonStore';
 import { useConversationStore } from '../store/conversationStore';
 import { PicoSprite } from '../components/pigeon/PicoSprite';
+import { CoopTownScene } from '../components/coop/CoopTownScene';
 import { FlightRibbon } from '../components/flight/FlightRibbon';
 import { flightProgress, flightStatus, useFlightStore } from '../store/flightStore';
 
@@ -77,48 +78,33 @@ export const OverworldHome = () => {
           </motion.button>
         )}
 
-        <motion.section
-          initial={{ opacity: 0, y: 8 }}
-          animate={{ opacity: 1, y: 0 }}
-          className="relative min-h-[360px] overflow-hidden rounded-[28px] border"
-          style={{
-            background: 'linear-gradient(180deg, #20283a 0%, #1b2030 50%, #141821 100%)',
-            borderColor: 'var(--border-subtle)',
-          }}
+        <CoopTownScene
+          hotspots={[
+            { id: 'coop', label: 'Loft', left: 1, top: 6, width: 20, height: 70, onSelect: () => navigate('/profile') },
+            { id: 'launch', label: 'Launch pad', left: 61, top: 60, width: 9, height: 36, onSelect: () => navigate('/send') },
+            { id: 'mailbox', label: 'Mailbox', left: 75, top: 28, width: 9, height: 60, badge: unreadCount, onSelect: () => navigate('/inbox') },
+          ]}
         >
-          <div className="absolute inset-x-0 top-0 h-2/3 opacity-70" style={{ background: 'radial-gradient(circle at 72% 18%, rgba(224,80,154,.28), transparent 28%), radial-gradient(circle at 24% 22%, rgba(47,191,163,.18), transparent 32%)' }} />
-          <div className="absolute inset-x-0 bottom-0 h-28 border-t" style={{ background: '#11151d', borderColor: 'rgba(232,217,181,.12)' }} />
+          <button
+            type="button"
+            className="block rounded-full transition-transform active:scale-95"
+            onClick={() => playAction('pet-happy')}
+            aria-label={`Pet ${pigeonName}`}
+          >
+            <PicoSprite
+              animation={picoAction}
+              size={150}
+              fallbackLabel={pigeonName}
+              onComplete={() => setPicoAction('idle')}
+            />
+          </button>
+        </CoopTownScene>
 
-          <div className="relative z-10 h-full min-h-[360px] flex flex-col items-center justify-end pb-20">
-            <button
-              type="button"
-              className="relative rounded-full p-3 transition-transform active:scale-95"
-              onClick={() => playAction('pet-happy')}
-              aria-label={`Pet ${pigeonName}`}
-            >
-              <PicoSprite
-                animation={picoAction}
-                size={180}
-                fallbackLabel={pigeonName}
-                onComplete={() => setPicoAction('idle')}
-              />
-              <span className="absolute -bottom-1 left-1/2 -translate-x-1/2 whitespace-nowrap rounded-full px-3 py-1 text-xs" style={{ background: 'rgba(18,21,29,.92)', color: 'var(--wheat)' }}>
-                Tap {pigeonName} to pet
-              </span>
-            </button>
-          </div>
-
-          <div className="absolute left-4 bottom-4 z-20 flex gap-2">
-            <ActionButton icon={Heart} label="Pet" onClick={() => playAction('pet-happy')} />
-            <ActionButton icon={Cookie} label="Snack" onClick={() => playAction('eat')} />
-          </div>
-        </motion.section>
-
-        <section className="grid grid-cols-3 gap-3">
-          <WorldAction icon={Mail} label="Mailbox" badge={unreadCount} onClick={() => navigate('/inbox')} />
-          <WorldAction icon={Home} label="Coop" onClick={() => navigate('/profile')} />
-          <WorldAction icon={Send} label="Launch" primary onClick={() => navigate('/send')} />
-        </section>
+        <div className="flex items-center gap-2">
+          <ActionButton icon={Heart} label="Pet" onClick={() => playAction('pet-happy')} />
+          <ActionButton icon={Cookie} label="Snack" onClick={() => playAction('eat')} />
+          <p className="ml-auto text-xs" style={{ color: 'var(--text-secondary)' }}>Drag the rooftop to look around</p>
+        </div>
 
         <div className="rounded-2xl border p-4" style={{ background: 'var(--coop-char)', borderColor: 'var(--border-subtle)' }}>
           <p className="text-sm" style={{ color: 'var(--text-secondary)' }}>
@@ -149,29 +135,10 @@ const ActionButton = ({ icon: Icon, label, onClick }: { icon: any; label: string
   <button
     type="button"
     onClick={onClick}
-    className="flex items-center gap-2 rounded-full border px-3 py-2 text-xs"
+    className="flex min-h-[44px] items-center gap-2 rounded-full border px-4 text-sm"
     style={{ background: 'rgba(18,21,29,.9)', borderColor: 'var(--border-subtle)', color: 'var(--wheat)' }}
   >
     <Icon className="h-4 w-4" />
     {label}
   </button>
-);
-
-const WorldAction = ({ icon: Icon, label, badge = 0, primary = false, onClick }: { icon: any; label: string; badge?: number; primary?: boolean; onClick: () => void }) => (
-  <motion.button
-    whileTap={{ scale: 0.96 }}
-    onClick={onClick}
-    className="relative flex min-h-[92px] flex-col items-center justify-center gap-2 rounded-2xl border"
-    style={{
-      background: primary ? 'rgba(47,191,163,.12)' : 'var(--coop-char)',
-      borderColor: primary ? 'var(--petrol)' : 'var(--border-subtle)',
-      color: primary ? 'var(--petrol)' : 'var(--wheat)',
-    }}
-  >
-    {badge > 0 && (
-      <span className="absolute right-2 top-2 min-w-5 rounded-full px-1.5 py-0.5 text-[10px] font-bold" style={{ background: 'var(--feather-magenta)', color: 'white' }}>{badge}</span>
-    )}
-    <Icon className="h-6 w-6" />
-    <span className="text-xs font-medium">{label}</span>
-  </motion.button>
 );

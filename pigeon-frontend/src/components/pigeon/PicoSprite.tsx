@@ -20,12 +20,6 @@ const CONFIG: Record<PicoAnimation, AnimationConfig> = {
   deliver: { fps: 8, loop: false, frames: 8 },
 };
 
-// Walk remains a deliberate alias until its dedicated strip is authored. All
-// flight and delivery states have one-to-one runtime assets.
-const ASSET_ALIAS: Partial<Record<PicoAnimation, string>> = {
-  walk: 'idle',
-};
-
 export type PicoSpriteProps = {
   animation?: PicoAnimation;
   size?: number;
@@ -33,6 +27,8 @@ export type PicoSpriteProps = {
   paused?: boolean;
   onComplete?: () => void;
   fallbackLabel?: string;
+  /** Pico is drawn facing left. Set this to face him right. */
+  flip?: boolean;
 };
 
 const prefersReducedMotion = () =>
@@ -46,12 +42,13 @@ export const PicoSprite = ({
   paused = false,
   onComplete,
   fallbackLabel = 'Pico',
+  flip = false,
 }: PicoSpriteProps) => {
   const config = CONFIG[animation];
   const [frame, setFrame] = useState(0);
   const [assetFailed, setAssetFailed] = useState(false);
   const reducedMotion = useMemo(prefersReducedMotion, []);
-  const src = picoStrips[ASSET_ALIAS[animation] ?? animation];
+  const src = picoStrips[animation];
 
   // Held in a ref so changing the callback identity does not restart the
   // animation, which would reset the strip to frame 0 on every parent render.
@@ -126,9 +123,9 @@ export const PicoSprite = ({
         backgroundRepeat: 'no-repeat',
         backgroundSize: `${config.frames * 100}% 100%`,
         backgroundPosition: `${position}% 0`,
-        // The art is pixel-based and two strips are authored at a quarter
-        // resolution, so smoothing them on upscale reads as blur.
+        // The art is pixel-based, so smoothing it on scale reads as blur.
         imageRendering: 'pixelated',
+        transform: flip ? 'scaleX(-1)' : undefined,
       }}
     >
       <img src={src} alt="" className="hidden" onError={() => setAssetFailed(true)} />

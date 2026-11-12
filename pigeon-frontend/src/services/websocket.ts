@@ -1,11 +1,16 @@
 import SockJS from 'sockjs-client';
 import { Client, StompSubscription } from '@stomp/stompjs';
 import { useConversationStore } from '../store/conversationStore';
+import { DEMO_MODE } from '../config';
 
 let stompClient: Client | null = null;
 let subscriptions: Map<string, StompSubscription> = new Map();
 
 export const connectWebSocket = (token: string) => {
+  // Demo mode has no server to connect to; the demo backend pushes its own
+  // status updates and replies straight into the store.
+  if (DEMO_MODE) return null;
+
   if (stompClient?.active) {
     console.log('WebSocket already connected');
     return stompClient;
@@ -40,6 +45,8 @@ export const connectWebSocket = (token: string) => {
 };
 
 export const subscribeToConversation = (conversationId: number) => {
+  if (DEMO_MODE) return;
+
   if (!stompClient?.active) {
     console.error('WebSocket not connected');
     return;

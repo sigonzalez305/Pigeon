@@ -30,6 +30,34 @@ A modern messaging web app with a Pokémon-inspired overworld aesthetic and Meta
 - **React Router** for navigation
 - **STOMP/SockJS** for WebSocket
 
+## Try it now (demo, no install)
+
+**https://sigonzalez305.github.io/Pigeon/app/**
+
+Tap a demo account, look around Coop Town, send a message, then send a Pigeon
+Message and watch it fly (about a minute).
+
+The demo is the real frontend with the server swapped for an in-browser
+stand-in (`pigeon-frontend/src/demo/demoBackend.ts`). Everything is stored in
+your browser. Nothing is sent to a server and nothing is shared between
+devices, so two people cannot message each other in it.
+
+To update the hosted demo after changing the frontend:
+
+```bash
+cd pigeon-frontend
+npm run build:demo     # writes ../app
+git add ../app && git commit -m "Rebuild demo"
+```
+
+GitHub Pages serves the `main` branch, so the demo updates when that lands on
+`main`. To check it in a browser first:
+
+```bash
+python3 -m http.server 4180            # from the repo root
+PIGEON_BASE_URL=http://localhost:4180/app/ node pigeon-frontend/e2e-demo.mjs
+```
+
 ## 🚀 Quick Start with Docker
 
 The easiest way to run the application is using Docker Compose:

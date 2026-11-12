@@ -1,16 +1,18 @@
 import { useEffect, useId, useMemo, useState } from 'react';
 import { AnimatePresence, motion } from 'framer-motion';
-import { ArrowLeft, Check, CloudSun, Feather, LocateFixed, MapPin, Phone } from 'lucide-react';
+import { Check, CloudSun, Feather, LocateFixed, MapPin, Phone } from 'lucide-react';
 import { useNavigate } from 'react-router-dom';
 import { usePigeonStore } from '../store/pigeonStore';
 import { useAuthStore } from '../store/authStore';
 import { useFlightStore } from '../store/flightStore';
 import { PicoSprite } from '../components/pigeon/PicoSprite';
+import { BackIcon } from '../components/icons/DuskIcons';
 import type { PicoAnimation } from '../assets/picoRuntime';
 import { AREA_CODE_CENTROIDS } from '../data/areaCodeCentroids';
 import { distanceMiles, requestPreciseLocation, resolveAreaCodeLocation, type RouteLocation } from '../services/location';
 import { fetchFlightWeather, weatherEtaMultiplier, type FlightWeather } from '../services/weather';
 import { PigeonSendError, sendPigeonMessage } from '../services/pigeonMessages';
+import sky from '../assets/asset-bank/production/coop-town/sky.png';
 import { ceremonyPhaseDuration, nextCeremonyPhase, type CeremonyPhase } from './ceremonySequence';
 
 const STEPS = ['Recipient', 'Pigeon', 'Scroll', 'Skies', 'Launch'] as const;
@@ -165,7 +167,7 @@ export const SendFlow = () => {
   return (
     <div className="min-h-full flex flex-col" style={{ background: 'var(--slate-dusk)' }}>
       <header className="flex items-center gap-3 p-4 border-b" style={{ borderColor: 'var(--border-subtle)' }}>
-        <button onClick={back} className="rounded-full p-2" aria-label="Go back"><ArrowLeft className="h-5 w-5" /></button>
+        <button onClick={back} className="flex h-11 w-11 items-center justify-center rounded-full" style={{ color: 'var(--wheat)' }} aria-label="Go back"><BackIcon /></button>
         <div className="flex-1">
           <p className="text-[10px] uppercase tracking-[0.22em]" style={{ color: 'var(--petrol)' }}>Pigeon Message</p>
           <h1 className="text-xl font-semibold" style={{ color: 'var(--wheat)' }}>{launched ? 'Pico is on the way' : 'Prepare the journey'}</h1>
@@ -324,8 +326,10 @@ const LaunchCeremony = ({ phase, pigeonName, onOpenFlight }: { phase: CeremonyPh
 
   return (
     <motion.section initial={{ opacity: 0 }} animate={{ opacity: 1 }} className="flex min-h-[520px] flex-col items-center justify-center text-center">
-      <div className="relative flex h-72 w-full max-w-md items-center justify-center overflow-hidden rounded-[32px] border" style={{ background: 'radial-gradient(circle at 50% 80%, rgba(47,191,163,.20), transparent 28%), linear-gradient(180deg,#242a42,#151924)', borderColor: 'var(--border-subtle)' }}>
-        <motion.div animate={phase === 'flap' || phase === 'glide' ? { x: [-20, 28, -8], y: [8, -22, -8] } : { y: [0, -3, 0] }} transition={{ duration: phase === 'flap' || phase === 'glide' ? 2.2 : 1.8, repeat: phase === 'flap' || phase === 'glide' ? Infinity : 0 }}>
+      <div className="relative flex h-72 w-full max-w-md items-center justify-center overflow-hidden rounded-[32px] border" style={{ background: '#151924', borderColor: 'var(--border-subtle)' }}>
+        <img src={sky} alt="" className="absolute inset-0 h-full w-full object-cover" />
+        <div className="absolute inset-0" style={{ background: 'radial-gradient(circle at 50% 85%, rgba(47,191,163,.22), transparent 34%), linear-gradient(180deg, rgba(18,21,29,.1), rgba(18,21,29,.6))' }} />
+        <motion.div className="relative" animate={phase === 'flap' || phase === 'glide' ? { x: [-20, 28, -8], y: [8, -22, -8] } : { y: [0, -3, 0] }} transition={{ duration: phase === 'flap' || phase === 'glide' ? 2.2 : 1.8, repeat: phase === 'flap' || phase === 'glide' ? Infinity : 0 }}>
           <PicoSprite animation={animation} size={210} fallbackLabel={pigeonName} />
         </motion.div>
       </div>

@@ -1,4 +1,4 @@
-import { BrowserRouter, Routes, Route, Navigate } from 'react-router-dom';
+import { BrowserRouter, HashRouter, Routes, Route, Navigate } from 'react-router-dom';
 import { useEffect } from 'react';
 import { AppShell } from './components/layout/AppShell';
 import { Login } from './pages/Login';
@@ -11,6 +11,11 @@ import { Profile } from './pages/Profile';
 import { useAuthStore } from './store/authStore';
 import { useConversationStore } from './store/conversationStore';
 import { connectWebSocket } from './services/websocket';
+import { DEMO_MODE } from './config';
+
+// A static host serves one file, so a deep link like /inbox would 404 on
+// reload. Hash routing keeps every route inside index.html.
+const Router = DEMO_MODE ? HashRouter : BrowserRouter;
 
 const ProtectedRoute = ({ children }: { children: React.ReactNode }) => {
   const { isAuthenticated } = useAuthStore();
@@ -29,7 +34,7 @@ function App() {
   }, [token, isAuthenticated]);
 
   return (
-    <BrowserRouter>
+    <Router>
       <Routes>
         <Route path="/login" element={<Login />} />
         <Route
@@ -49,7 +54,7 @@ function App() {
           <Route path="profile" element={<Profile />} />
         </Route>
       </Routes>
-    </BrowserRouter>
+    </Router>
   );
 }
 
